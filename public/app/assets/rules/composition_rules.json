@@ -1,0 +1,597 @@
+{
+  "version": 1,
+  "generator": "rag_teacher/scripts/build_rules.py",
+  "pipeline": "RAG-Anything + LightRAG -> rules.json -> Flutter",
+  "modes": {
+    "portrait": {
+      "guideType": "people_eye_thirds",
+      "bodyCenterX": 0.42,
+      "faceCenterY": 0.3,
+      "eyeLineY": 0.34,
+      "footLineY": 0.92,
+      "headroom": 0.08,
+      "horizonY": 0.48,
+      "autoCaptureThreshold": 86,
+      "scoreWeights": {
+        "subjectPosition": 0.18,
+        "facePosition": 0.22,
+        "eyeLine": 0.22,
+        "horizon": 0.08,
+        "footSafety": 0.1,
+        "limbSafety": 0.12,
+        "detectionConfidence": 0.08
+      },
+      "checklist": [
+        "Eyes sit near the upper third.",
+        "Headroom stays small but not cropped.",
+        "Hands and feet stay safely inside the frame.",
+        "Background distractions are reduced."
+      ],
+      "guideAnchors": [
+        "eyeLineY",
+        "faceCenterY",
+        "bodyCenterX",
+        "footLineY"
+      ],
+      "captureAdvice": [
+        "눈을 위쪽 1/3에 맞춰",
+        "머리 위 여백을 줄여",
+        "손발이 잘리지 않게"
+      ],
+      "teacherNotes": [
+        "Use the eye line near the upper third for people photos.",
+        "Move close enough that the person reads clearly.",
+        "Avoid stiff centered posing when the scene supports a more natural frame.",
+        "Use rule-of-thirds guide lines as the default placement target."
+      ],
+      "sources": [
+        "nyi_10tips_user_provided.pdf#page=12",
+        "smartphone_photographer_5_ways_user_research.pdf#page=6",
+        "smartphone_photographer_5_ways_user_research.pdf#page=10",
+        "https://digital-photography-school.com/6-tips-for-perfect-composition-in-portrait-photography",
+        "myphotoschool_composition_ebook_v5.pdf#page=29",
+        "myphotoschool_composition_ebook_v5.pdf#page=30"
+      ]
+    },
+    "selfie": {
+      "guideType": "people_eye_thirds",
+      "bodyCenterX": 0.5,
+      "faceCenterY": 0.34,
+      "eyeLineY": 0.36,
+      "footLineY": 0.76,
+      "headroom": 0.1,
+      "horizonY": 0.52,
+      "autoCaptureThreshold": 84,
+      "scoreWeights": {
+        "subjectPosition": 0.16,
+        "facePosition": 0.28,
+        "eyeLine": 0.24,
+        "horizon": 0.06,
+        "footSafety": 0.04,
+        "limbSafety": 0.08,
+        "detectionConfidence": 0.14
+      },
+      "checklist": [
+        "Face and eyes are the main anchors.",
+        "The head is close without cutting hair or chin.",
+        "Background edges are clean.",
+        "The camera angle avoids strong distortion."
+      ],
+      "guideAnchors": [
+        "faceCenterY",
+        "eyeLineY",
+        "bodyCenterX"
+      ],
+      "captureAdvice": [
+        "얼굴을 조금 위로",
+        "눈을 위쪽 1/3에",
+        "배경 가장자리를 정리"
+      ],
+      "teacherNotes": [
+        "Keep the face close enough to read clearly without cropping the head.",
+        "Use the eye line as the main anchor because selfies are face-led portraits.",
+        "Watch the background edges because close framing makes distractions more obvious."
+      ],
+      "sources": [
+        "nyi_10tips_user_provided.pdf#page=12",
+        "smartphone_photographer_5_ways_user_research.pdf#page=6",
+        "smartphone_photographer_5_ways_user_research.pdf#page=10",
+        "https://digital-photography-school.com/6-tips-for-perfect-composition-in-portrait-photography",
+        "myphotoschool_composition_ebook_v5.pdf#page=29",
+        "myphotoschool_composition_ebook_v5.pdf#page=30"
+      ]
+    },
+    "group": {
+      "guideType": "group_people",
+      "bodyCenterX": 0.5,
+      "faceCenterY": 0.32,
+      "eyeLineY": 0.35,
+      "footLineY": 0.88,
+      "headroom": 0.1,
+      "horizonY": 0.5,
+      "autoCaptureThreshold": 86,
+      "scoreWeights": {
+        "subjectPosition": 0.24,
+        "facePosition": 0.2,
+        "eyeLine": 0.18,
+        "horizon": 0.08,
+        "footSafety": 0.08,
+        "limbSafety": 0.12,
+        "detectionConfidence": 0.1
+      },
+      "checklist": [
+        "Faces stay readable and close enough.",
+        "The two-person mass is balanced around center.",
+        "Face height sits near the upper third.",
+        "Shoulders and hands are not awkwardly cropped."
+      ],
+      "guideAnchors": [
+        "eyeLineY",
+        "faceCenterY",
+        "bodyCenterX"
+      ],
+      "captureAdvice": [
+        "두 얼굴 높이를 맞춰",
+        "두 사람 간격을 줄여",
+        "중앙 균형을 맞춰"
+      ],
+      "teacherNotes": [
+        "Keep a small group close enough that faces remain readable.",
+        "Balance both people around the center without making the frame static.",
+        "Keep shared face height near the upper third."
+      ],
+      "sources": [
+        "uf_ifas_digital_photography_composition_techniques.pdf#page=4",
+        "https://digital-photography-school.com/6-tips-for-perfect-composition-in-portrait-photography",
+        "https://www.nyip.edu/photo-articles/photography-tutorials/group-portrait-tips",
+        "https://www.nyip.edu/photo-articles/photography-tutorials/5-tips-for-romantic-portraits",
+        "complete_guide_to_landscape_photography.pdf#page=35",
+        "dps_ultimate_guide_to_food_photography.pdf#page=2"
+      ]
+    },
+    "landscape": {
+      "guideType": "horizon_thirds",
+      "bodyCenterX": 0.5,
+      "faceCenterY": 0.3,
+      "eyeLineY": 0.33,
+      "footLineY": 0.92,
+      "headroom": 0.08,
+      "horizonY": 0.38,
+      "autoCaptureThreshold": 88,
+      "scoreWeights": {
+        "subjectPosition": 0.18,
+        "facePosition": 0.08,
+        "eyeLine": 0.08,
+        "horizon": 0.38,
+        "footSafety": 0.06,
+        "limbSafety": 0.04,
+        "detectionConfidence": 0.18
+      },
+      "checklist": [
+        "Horizon or dominant horizontal line is level.",
+        "Horizon sits on an upper or lower third.",
+        "Leading lines or foreground depth guide the eye.",
+        "Any person in the frame supports the scene scale."
+      ],
+      "guideAnchors": [
+        "horizonY",
+        "bodyCenterX"
+      ],
+      "captureAdvice": [
+        "수평을 맞춰",
+        "지평선을 1/3에",
+        "리딩라인을 살려"
+      ],
+      "teacherNotes": [
+        "Place the horizon on an upper or lower third instead of the exact middle.",
+        "Use lines and perspective to lead the eye through the scene.",
+        "Keep strong horizontal elements level."
+      ],
+      "sources": [
+        "mediaknite_year10_photography_booklet.pdf#page=7",
+        "https://www.capturelandscapes.com/composition-in-landscape-photography/",
+        "https://www.digital-photography-school.com/four-rules-of-photographic-composition/comment-page-1/",
+        "https://www.naturettl.com/composition-leading-lines-and-vanishing-points/",
+        "https://alphauniverse.com/tips-for-dynamic-landscape-compositions/",
+        "complete_guide_to_landscape_photography.pdf#page=10"
+      ]
+    },
+    "stillLife": {
+      "guideType": "subject_thirds",
+      "bodyCenterX": 0.5,
+      "faceCenterY": 0.46,
+      "eyeLineY": 0.46,
+      "footLineY": 0.86,
+      "headroom": 0.12,
+      "horizonY": 0.5,
+      "autoCaptureThreshold": 84,
+      "scoreWeights": {
+        "subjectPosition": 0.36,
+        "facePosition": 0.22,
+        "eyeLine": 0.1,
+        "horizon": 0.06,
+        "footSafety": 0.06,
+        "limbSafety": 0.0,
+        "detectionConfidence": 0.2
+      },
+      "checklist": [
+        "The focal object is obvious.",
+        "The subject sits near a third or intersection.",
+        "Props create balance without clutter.",
+        "Edges and background distractions are cropped out."
+      ],
+      "guideAnchors": [
+        "bodyCenterX",
+        "faceCenterY",
+        "eyeLineY"
+      ],
+      "captureAdvice": [
+        "주 피사체를 분명하게",
+        "삼분할 교차점에 맞춰",
+        "주변 소품을 줄여"
+      ],
+      "teacherNotes": [
+        "Arrange objects so the focal point is obvious.",
+        "Place the focal point near rule-of-thirds lines or intersections.",
+        "Remove distracting background clutter around the subject."
+      ],
+      "sources": [
+        "https://www.digital-photography-school.com/four-rules-of-photographic-composition/comment-page-1/",
+        "dps_ultimate_guide_to_food_photography.pdf#page=11",
+        "dps_ultimate_guide_to_food_photography.pdf#page=30",
+        "https://www.shopify.com/blog/product-photography",
+        "https://expertphotography.com/golden-ratio-vs-rule-of-thirds/",
+        "https://expertphotography.com/flat-lay-product-photography"
+      ]
+    },
+    "object": {
+      "guideType": "subject_viewpoint",
+      "bodyCenterX": 0.46,
+      "faceCenterY": 0.44,
+      "eyeLineY": 0.44,
+      "footLineY": 0.86,
+      "headroom": 0.12,
+      "horizonY": 0.5,
+      "autoCaptureThreshold": 85,
+      "scoreWeights": {
+        "subjectPosition": 0.38,
+        "facePosition": 0.22,
+        "eyeLine": 0.08,
+        "horizon": 0.06,
+        "footSafety": 0.06,
+        "limbSafety": 0.0,
+        "detectionConfidence": 0.2
+      },
+      "checklist": [
+        "The object clearly dominates the frame.",
+        "Viewpoint makes shape and scale understandable.",
+        "Negative space does not compete with the subject.",
+        "Background clutter is minimized."
+      ],
+      "guideAnchors": [
+        "bodyCenterX",
+        "faceCenterY"
+      ],
+      "captureAdvice": [
+        "사물을 더 크게",
+        "배경을 비워",
+        "45도나 정면으로 정리"
+      ],
+      "teacherNotes": [
+        "Frame the object as the clear subject of interest.",
+        "Try a viewpoint that makes an ordinary object more interesting.",
+        "Crop non-essential clutter from the frame."
+      ],
+      "sources": [
+        "https://www.digital-photography-school.com/four-rules-of-photographic-composition/comment-page-1/",
+        "dps_ultimate_guide_to_food_photography.pdf#page=11",
+        "dps_ultimate_guide_to_food_photography.pdf#page=30",
+        "https://www.shopify.com/blog/product-photography",
+        "https://expertphotography.com/golden-ratio-vs-rule-of-thirds/",
+        "https://expertphotography.com/flat-lay-product-photography"
+      ]
+    },
+    "candid": {
+      "guideType": "candid_people",
+      "bodyCenterX": 0.42,
+      "faceCenterY": 0.32,
+      "eyeLineY": 0.35,
+      "footLineY": 0.86,
+      "headroom": 0.1,
+      "horizonY": 0.48,
+      "autoCaptureThreshold": 86,
+      "scoreWeights": {
+        "subjectPosition": 0.22,
+        "facePosition": 0.18,
+        "eyeLine": 0.14,
+        "horizon": 0.08,
+        "footSafety": 0.08,
+        "limbSafety": 0.12,
+        "detectionConfidence": 0.18
+      },
+      "checklist": [
+        "The action or story is immediately readable.",
+        "Look or motion space is left in front of the subject.",
+        "The subject is close enough for the moment to read.",
+        "The background stays simple."
+      ],
+      "guideAnchors": [
+        "bodyCenterX",
+        "faceCenterY",
+        "eyeLineY"
+      ],
+      "captureAdvice": [
+        "행동이 보이게",
+        "방향 앞쪽 여백을 남겨",
+        "배경을 단순하게"
+      ],
+      "teacherNotes": [
+        "Show people doing something rather than forcing a posed shot.",
+        "Move close enough that the action is understandable.",
+        "Keep the composition simple so the story reads quickly."
+      ],
+      "sources": [
+        "uf_ifas_digital_photography_composition_techniques.pdf#page=5",
+        "nyi_10tips_user_provided.pdf#page=11",
+        "uf_ifas_digital_photography_composition_techniques.pdf#page=4",
+        "https://www.australianphotography.com/photo-tips/the-basics-of-landscape-composition-part-one",
+        "https://digital-photography-school.com/6-tips-for-perfect-composition-in-portrait-photography",
+        "https://www.nyip.edu/photo-articles/cameras-and-gear/nyip-digital-photography-tips"
+      ]
+    },
+    "lowLight": {
+      "guideType": "stable_level",
+      "bodyCenterX": 0.44,
+      "faceCenterY": 0.33,
+      "eyeLineY": 0.36,
+      "footLineY": 0.9,
+      "headroom": 0.1,
+      "horizonY": 0.48,
+      "autoCaptureThreshold": 90,
+      "scoreWeights": {
+        "subjectPosition": 0.18,
+        "facePosition": 0.16,
+        "eyeLine": 0.12,
+        "horizon": 0.22,
+        "footSafety": 0.06,
+        "limbSafety": 0.08,
+        "detectionConfidence": 0.18
+      },
+      "checklist": [
+        "The frame is level and stable.",
+        "The subject is separated from harsh bright or dark patches.",
+        "The composition stays simple because detail is weaker.",
+        "Capture waits for a steady pose."
+      ],
+      "guideAnchors": [
+        "horizonY",
+        "bodyCenterX",
+        "faceCenterY"
+      ],
+      "captureAdvice": [
+        "수평을 먼저 맞춰",
+        "밝은 배경을 피해",
+        "흔들리지 않게 멈춰"
+      ],
+      "teacherNotes": [
+        "Use a stable, simple composition when weak light makes detail harder to read.",
+        "Keep the subject separated from distracting bright or dark background areas.",
+        "Hold the frame level before capture."
+      ],
+      "sources": [
+        "uf_ifas_digital_photography_composition_techniques.pdf#page=2",
+        "https://digital-photography-school.com/tips-better-results-shooting-in-low-light-conditions/",
+        "https://www.nyip.edu/photo-articles/cameras-and-gear/nyip-digital-photography-tips",
+        "complete_guide_to_landscape_photography.pdf#page=30",
+        "dps_ultimate_guide_to_food_photography.pdf#page=19",
+        "food_photography_for_beginners.pdf#page=3"
+      ]
+    }
+  },
+  "evidenceSummary": {
+    "rule_of_thirds": [
+      {
+        "source": "Digital Photography School Composition Rules",
+        "page": 1,
+        "text": "But how does it work? The rule of thirds states that you should place your key compositional elements a third of the way into the frame. It even comes with a handy set of gridlines to help you out: So if you’re photographing a beach sunset scene, instead of putting the horizon line smack-dab in the middle of the frame,"
+      },
+      {
+        "source": "uf_ifas_digital_photography_composition_techniques.pdf",
+        "page": 2,
+        "text": "• Vertical lines convey a variety of different moods in a photograph, ranging from power and strength, in such images as skyscrapers, to growth, such as in photographs of trees. • Horizontal lines convey a message of stability or rest, such as photographs of horizons, oceans, and even sleeping people. Landscape horizon"
+      },
+      {
+        "source": "CaptureLandscapes Composition in Landscape Photography",
+        "page": 1,
+        "text": "These compositional building blocks, like the Rule of Thirds, Leading Lines, and Foreground Interest, are often taught to beginners for a reason: they work. They help create structure, guide the viewer’s eye, and add impact to an otherwise flat or unbalanced scene. In this section, we’ll take a closer look at the most "
+      }
+    ],
+    "horizon": [
+      {
+        "source": "myphotoschool_composition_ebook_v5.pdf",
+        "page": 5,
+        "text": "PAGE 5 COMPOSITION CONTENTS The Basics 6 Understanding Line & Shape 7 Symmetry or Asymmetry 8 Horizontal or Vertical 9 Tall Subjects 10 Framing Your Subject 11 Rule of Thirds 12 The Golden Section 14 Centre Framing 16 To Fill or Not to Fill 18 Cropping 20 Choosing the Right Format 22 Cropping in Computer 23 Classic Cro"
+      },
+      {
+        "source": "Nature TTL Leading Lines and Vanishing Points",
+        "page": 1,
+        "text": "If you place objects like this so that they are going away from the camera, leading into the distance, they will appear to converge – even though we understand that they do in fact remain parallel. Parallel lines appear to converge at the vanishing point. Horizontal lines will meet at a point on the horizon; vertical l"
+      },
+      {
+        "source": "ExpertPhotography Flat Lay Product Photography",
+        "page": 1,
+        "text": "Then look at the objects’ corners. If you can see their sides, then you’ll need to move higher up and adjust your angle until the sides disappear. Use a Tripod with a Horizontal Mount When doing flat lay photography, it’s best to use a tripod with a horizontal mount. That way, you can take overhead images without havin"
+      }
+    ],
+    "space": [
+      {
+        "source": "studiobinder_elements_of_composition_ebook.pdf",
+        "page": 48,
+        "text": "Fill the frame Filling the frame is the technique of composing an image so that positive space takes up most or all of the frame. This technique is often used to draw immediate and direct attention toward a subject. In this technique, a single subject is framed close up so that it literally fills the frame. Filling the"
+      },
+      {
+        "source": "GearFrame Photography Composition Guide",
+        "page": 1,
+        "text": "The eye hunts for the anomaly. Use it deliberately. The power of emptiness Negative space Negative space is the empty area around your subject — sky, sea, a plain wall, a foggy background. Most beginners try to fill the frame. Restraint is often more powerful. A small subject floating in a large empty space creates a s"
+      },
+      {
+        "source": "Digital Photography School Portrait Mastery Tips",
+        "page": 1,
+        "text": "Try to frame the shot so that your subject’s head is distanced from distracting elements. Try to find colors or tones that either complement or contrast your subject’s skin tones and clothing. #4 Focus on the dominant eye This is particularly important if you’re shooting with shallow depth of field. Be sure to focus on"
+      }
+    ],
+    "balance": [
+      {
+        "source": "CaptureLandscapes Composition in Landscape Photography",
+        "page": 1,
+        "text": "This helps create balance and avoids the static, less dynamic feel that often comes from centering your subject. In landscape photography, this might mean placing the horizon along the top or bottom third, rather than dead center. A lone tree, mountain peak, or person in the scene might be placed at one of the “power p"
+      },
+      {
+        "source": "CaptureLandscapes Composition in Landscape Photography",
+        "page": 1,
+        "text": "Being mindful of these pitfalls will help you create cleaner, more intentional, and more compelling landscape photos . #1 Centering Everything One of the most common habits in early landscape photography is placing the main subject or horizon directly in the center of the frame. While this approach can be effective in "
+      },
+      {
+        "source": "sofn_using_your_smartphone_photography_tips.pdf",
+        "page": 8,
+        "text": "As such, based on how you frame the scene, the viewer may see shapes and patterns that don’t really exist — and this could produce a more compelling image.  Balance: As described in the Rule of Thirds and the Golden Ratio, balance is an important aspect of aesthetic beauty. This could mean symmetry, but more often mea"
+      }
+    ],
+    "background": [
+      {
+        "source": "NYIP How to Take Romantic Portraits",
+        "page": 1,
+        "text": "Guideline Three: How can I simplify my subject? The most common problem with people pictures is a distracting background of clutter — things like trees and chimneys — that appear to stick out of the subject's head. For portraits, a simple background is best. If you're shooting indoors, look for a cool-colored wall, or "
+      },
+      {
+        "source": "myphotoschool_composition_ebook_v5.pdf",
+        "page": 27,
+        "text": "PAGE 27 COMPOSITION ISOLATING YOUR SUBJECT Avoid Busy Backgrounds. Take on board the following advice to help clean up your images. Busy backgrounds and cluttered images don’t allow the eye to settle on one subject. Keep it simple and allow the subject to speak for itself without getting lost in the image. Keeping it S"
+      },
+      {
+        "source": "myphotoschool_composition_ebook_v5.pdf",
+        "page": 28,
+        "text": "PAGE 28 COMPOSITION P eople’s attention are drawn to bright colours or highlights and learning to spot these distracting elements, before you take the photograph is always difficult, especially when you are in a hurry. Here are a few a few tips and advice for keeping things simple. Zoom-in For Detail Getting in close t"
+      }
+    ],
+    "perspective": [
+      {
+        "source": "CaptureLandscapes Composition in Landscape Photography",
+        "page": 1,
+        "text": "By shifting your perspective, you can exaggerate depth, minimize distractions, create stronger relationships between elements, or entirely change the mood of an image. Low angles, for example, can make foreground details feel more immersive and dominant, while high angles may simplify a chaotic scene or reveal interest"
+      },
+      {
+        "source": "mediaknite_year10_photography_booklet.pdf",
+        "page": 15,
+        "text": "AIM 1. IMAGE LIBRARY - To show that you understand a range of shot types, angles and composing techniques & manipulations used in photography. 2. To analyse the work produced by a professional photographer. 3. To plan & produce an engaging sequence of images aimed at a suitable target audience. WHAT TO DO? 1. IMAGE LIB"
+      },
+      {
+        "source": "studiobinder_elements_of_composition_ebook.pdf",
+        "page": 90,
+        "text": "CHAPTER 14 Angle Assuming you’ve made all your decisions regarding “what” we see in a composition, let’s finish with one last consideration — “how” we see it. In this context, angle specifically refers to the point of view given to the viewer on whatever image you’re presenting them. This perspective can have a dramati"
+      }
+    ],
+    "people": [
+      {
+        "source": "nyi_10tips_user_provided.pdf",
+        "page": 12,
+        "text": "Whether you take the picture with your camera set to black-and-white, or use an image- editing program to take out the color later, there are some photographs that just look better in a monochromatic form. It could be sepia-and-white or blue/black-and-white, as well. This quiet portrait of two boys achieves a sense of "
+      },
+      {
+        "source": "smartphone_photographer_5_ways_user_research.pdf",
+        "page": 6,
+        "text": "The Smartphone Photographer 5 dead space so as to express the idea that the object is moving forward and has a destination. An important thing to remember when framing a shot with people is to avoid chopping the tops of people’s heads off by giving them little to no headroom. Make sure you give your subjects enough hea"
+      },
+      {
+        "source": "smartphone_photographer_5_ways_user_research.pdf",
+        "page": 10,
+        "text": "The Smartphone Photographer 9 Midday is the least desirable time of day to take photos because the sun is directly above and at its harshest. If your subject is a person, during this time you might find that things like caps, hats and even foreheads cast shadows around the eyes and that’s hardly ever a good look. It’s "
+      }
+    ],
+    "group": [
+      {
+        "source": "uf_ifas_digital_photography_composition_techniques.pdf",
+        "page": 4,
+        "text": "Avoid extremely light or dark back­ grounds. The more distractions that are removed from the background, the more attention is drawn to the subject. Types of Photos Try to shoot a photograph so that someone does not need to read a caption or an accompanying news story to under­ stand what the photograph is about. News "
+      },
+      {
+        "source": "uf_ifas_digital_photography_composition_techniques.pdf",
+        "page": 4,
+        "text": "People want to see closer shots of people’s faces, not far-away shots of large groups. A feature photograph is a photograph not tied to a news story. Many times, you will see a feature photograph with just a caption that details what the photo is about. A photo series is a group of three to five photographs on the same"
+      },
+      {
+        "source": "Digital Photography School Portrait Composition Tips",
+        "page": 1,
+        "text": "Use a Reflector Tips for Using Flash for Beach Portraits How to Find and Use Natural Reflectors for Portraits How to Create Dramatic Portraits with Shadow Photography [video] Tips for Portrait Photography in Overcast Weather [video] How to Photograph People Outdoors Without Using a Reflector How To Use an Outdoor Studi"
+      }
+    ],
+    "landscape": [
+      {
+        "source": "mediaknite_year10_photography_booklet.pdf",
+        "page": 7,
+        "text": "Step 4 - Landscape Composition Using composition effectively when working with landscapes is essential. The drama of a great landscape shot is based upon it's composition and structure. Ask yourself what you want your shot to be about. Is it about the water, the mountains in the distance, the horizon, the sunset or the"
+      },
+      {
+        "source": "CaptureLandscapes Composition in Landscape Photography",
+        "page": 1,
+        "text": "#3 Depth and Layers Depth is one of the most powerful tools in landscape photography . It helps transform a flat, two-dimensional image into something that feels immersive and three-dimensional, drawing the viewer into the scene and guiding their eye through it . One of the most effective ways to create a sense of dept"
+      },
+      {
+        "source": "Digital Photography School Composition Rules",
+        "page": 1,
+        "text": "That way, the image feels more open and less cramped. Similarly, if you’re photographing a moving plane, the rule of space encourages you to include plenty of empty sky in front of the plane (and very little sky behind it), so your main subject has room to “move.” Now, like the other compositional guidelines in this ar"
+      }
+    ],
+    "object": [
+      {
+        "source": "Digital Photography School Composition Rules",
+        "page": 1,
+        "text": "Photographers argue over what makes the rule of odds such an effective composition technique, though it may have to do with our capacity to group items. The brain groups in pairs, so while an even number of items is easily groupable, an odd number of items will always leave out the final element – causing the viewer to"
+      },
+      {
+        "source": "dps_ultimate_guide_to_food_photography.pdf",
+        "page": 11,
+        "text": "The Ultimate Guide to Food Photography 11 Plating The most important factor when choosing the dishes on which you will present your food is the size. Objects can look very different to the camera than to the eye and often look bigger than we expect. For this reason, it’s a good idea to choose smaller dishes than you wo"
+      },
+      {
+        "source": "dps_ultimate_guide_to_food_photography.pdf",
+        "page": 30,
+        "text": "The Ultimate Guide to Food Photography 30 Repetition Repeating elements also add interest to an image. Repetition can occur spontaneously in the subject or can be created by added elements such as props and supporting ingredients. Sometimes patterns can become monotonous, so breaking up a pattern can create a stronger "
+      }
+    ],
+    "candid": [
+      {
+        "source": "uf_ifas_digital_photography_composition_techniques.pdf",
+        "page": 5,
+        "text": "5 Digital Photography Composition Techniques the reader to understand the photograph. Usually, a caption provides information about who is in the photograph, what is going on, where and when the action happened, and why the action is significant. A caption is one to two sentences in length. Include the full name of the"
+      },
+      {
+        "source": "nyi_10tips_user_provided.pdf",
+        "page": 11,
+        "text": "Let’s learn from professional news photographers. Before anything else, they generally make a “safe” picture. That is, a straightforward image that tells the newspaper story: Who, what, when, where, and how. Then (and this is the tip) they keep shooting, seeking interesting angles and framing possibilities that might t"
+      },
+      {
+        "source": "uf_ifas_digital_photography_composition_techniques.pdf",
+        "page": 4,
+        "text": "Avoid extremely light or dark back­ grounds. The more distractions that are removed from the background, the more attention is drawn to the subject. Types of Photos Try to shoot a photograph so that someone does not need to read a caption or an accompanying news story to under­ stand what the photograph is about. News "
+      }
+    ],
+    "light": [
+      {
+        "source": "uf_ifas_digital_photography_composition_techniques.pdf",
+        "page": 2,
+        "text": "2 Digital Photography Composition Techniques light that is neither too dark nor too bright. If using the automatic flash doesn’t produce satisfactory results, use one of the other flash settings. It is also recommended to stand no closer than 4 feet away from the subject and no farther than 10 feet away to get the best"
+      },
+      {
+        "source": "Digital Photography School Low Light Tips",
+        "page": 1,
+        "text": "Shooting at f/8 will give you a good depth of field and enough sharpness. Not to mention, most lenses function at their best around this aperture. Bulb mode is also a great way to shoot landscape photography. This mode is mostly used for long exposures at night or in dark conditions and allows you to do an exposure lon"
+      },
+      {
+        "source": "NYIP Digital Photography Tips",
+        "page": 1,
+        "text": "When you select this setting the flash will fire every time you press the shutter. This photo is a perfect example of a picture that automatic flash wouldn't capture. Since we're looking up at the subject, there's lots of bright sky in the frame. If the photographer doesn't command the flash to fire, the girl's face wo"
+      }
+    ]
+  }
+}

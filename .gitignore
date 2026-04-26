@@ -1,0 +1,62 @@
+# Local-only project materials
+_local/
+rag_teacher/
+exbf_flutter/
+scripts/
+reference/
+references/
+third_party_reference/
+external_reference/
+
+# AI model binaries stay local. Do not commit downloaded model weights.
+**/assets/models/*.tflite
+
+# Documentation is kept out of the public repo for now.
+README.md
+RAG_SOURCES.md
+**/README.md
+*.pdf
+
+# Logs, IDE files, and generated artifacts
+*.log
+*.iml
+.idea/
+.vscode/
+
+# Dart / Flutter / build cache
+**/.metadata
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/build/
+**/coverage/
+**/doc/api/
+
+# Android / Gradle local files
+**/.gradle/
+**/android/local.properties
+**/android/keystore.properties
+**/*.jks
+**/*.keystore
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+
+# iOS/macOS generated Flutter files
+**/ios/
+**/linux/
+**/macos/
+**/web/
+**/windows/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/ephemeral/
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/macos/Flutter/ephemeral/
+
+# OS files
+.DS_Store
+Thumbs.db

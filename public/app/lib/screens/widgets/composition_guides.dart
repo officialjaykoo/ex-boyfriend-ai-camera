@@ -1,0 +1,741 @@
+part of 'package:exbf_camera/screens/camera_screen.dart';
+
+class _RuleGrid extends StatelessWidget {
+  const _RuleGrid();
+
+  @override
+  Widget build(BuildContext context) =>
+      CustomPaint(painter: _RuleGridPainter());
+}
+
+class _RuleGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.34)
+      ..strokeWidth = 1;
+    canvas.drawLine(
+      Offset(size.width / 3, 0),
+      Offset(size.width / 3, size.height),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 2 / 3, 0),
+      Offset(size.width * 2 / 3, size.height),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height / 3),
+      Offset(size.width, size.height / 3),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 2 / 3),
+      Offset(size.width, size.height * 2 / 3),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _CompositionGuideOverlay extends StatelessWidget {
+  const _CompositionGuideOverlay({
+    required this.mode,
+    required this.rules,
+    required this.estimate,
+    required this.visionResult,
+    required this.ready,
+  });
+
+  final ShotMode mode;
+  final CompositionRuleSet rules;
+  final SubjectEstimate estimate;
+  final VisionFrameResult? visionResult;
+  final bool ready;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _CompositionGuidePainter(
+        mode: mode,
+        rules: rules,
+        estimate: estimate,
+        visionResult: visionResult,
+        ready: ready,
+      ),
+    );
+  }
+}
+
+class _VisionDebugOverlay extends StatelessWidget {
+  const _VisionDebugOverlay({required this.result});
+
+  final VisionFrameResult? result;
+
+  @override
+  Widget build(BuildContext context) {
+    final result = this.result;
+    if (result == null) return const SizedBox.shrink();
+    return CustomPaint(painter: _VisionDebugPainter(result));
+  }
+}
+
+class _VisionDebugPainter extends CustomPainter {
+  const _VisionDebugPainter(this.result);
+
+  final VisionFrameResult result;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final boxPaint = Paint()
+      ..color = _accentPink.withValues(alpha: 0.92)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4;
+    final labelPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.54)
+      ..style = PaintingStyle.fill;
+    final posePaint = Paint()
+      ..color = const Color(0xff19c37d).withValues(alpha: 0.92)
+      ..style = PaintingStyle.fill;
+    final facePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.92)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2;
+    final textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    );
+
+    final objectsToDraw = [
+      ...result.objects.where((object) => object.label == 'person'),
+      ...result.objects.where((object) => object.label != 'person'),
+    ].take(6);
+
+    for (final object in objectsToDraw) {
+      final rect = Rect.fromLTWH(
+        object.x * size.width,
+        object.y * size.height,
+        object.width * size.width,
+        object.height * size.height,
+      );
+      canvas.drawRect(rect, boxPaint);
+      final label = '${object.label} ${(object.confidence * 100).round()}%';
+      textPainter.text = TextSpan(
+        text: label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      );
+      textPainter.layout();
+      final labelRect = Rect.fromLTWH(
+        rect.left,
+        (rect.top - 20).clamp(0, size.height - 18).toDouble(),
+        textPainter.width + 8,
+        18,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(labelRect, const Radius.circular(5)),
+        labelPaint,
+      );
+      textPainter.paint(canvas, labelRect.topLeft + const Offset(4, 2));
+    }
+
+    for (final face in result.faces.take(4)) {
+      final rect = Rect.fromLTWH(
+        face.x * size.width,
+        face.y * size.height,
+        face.width * size.width,
+        face.height * size.height,
+      );
+      canvas.drawOval(rect, facePaint);
+      for (final point in [
+        face.leftEye,
+        face.rightEye,
+        face.nose,
+      ].whereType<Offset>()) {
+        canvas.drawCircle(
+          Offset(point.dx * size.width, point.dy * size.height),
+          3.6,
+          Paint()..color = _accentPink,
+        );
+      }
+    }
+
+    for (final point in result.pose.where((point) => point.confidence > 0.18)) {
+      final center = Offset(point.x * size.width, point.y * size.height);
+      canvas.drawCircle(center, 5.5, Paint()..color = Colors.black45);
+      canvas.drawCircle(center, 3.4, posePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _VisionDebugPainter oldDelegate) {
+    return oldDelegate.result != result;
+  }
+}
+
+class _CompositionGuidePainter extends CustomPainter {
+  const _CompositionGuidePainter({
+    required this.mode,
+    required this.rules,
+    required this.estimate,
+    required this.visionResult,
+    required this.ready,
+  });
+
+  final ShotMode mode;
+  final CompositionRuleSet rules;
+  final SubjectEstimate estimate;
+  final VisionFrameResult? visionResult;
+  final bool ready;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    switch (mode) {
+      case ShotMode.portrait:
+        _drawGuideFromRule(canvas, size, fullBody: estimate.footLineY > 0.86);
+      case ShotMode.selfie:
+        _drawSelfieGuide(canvas, size);
+      case ShotMode.group:
+        _drawGuideFromRule(canvas, size, fullBody: true);
+      case ShotMode.landscape:
+        _drawGuideFromRule(canvas, size, fullBody: false);
+      case ShotMode.stillLife:
+        _drawStillLifeGuide(canvas, size);
+      case ShotMode.object:
+        _drawObjectGuide(canvas, size);
+      case ShotMode.candid:
+        _drawGuideFromRule(canvas, size, fullBody: false);
+      case ShotMode.lowLight:
+        _drawGuideFromRule(canvas, size, fullBody: false);
+    }
+  }
+
+  void _drawGuideFromRule(Canvas canvas, Size size, {required bool fullBody}) {
+    switch (rules.guideType) {
+      case 'people_eye_thirds':
+        _drawPeopleEyeThirdsGuide(canvas, size, fullBody);
+      case 'group_people':
+        _drawGroupPeopleGuide(canvas, size);
+      case 'horizon_thirds':
+        _drawHorizonThirdsGuide(canvas, size);
+      case 'subject_thirds':
+        _drawSubjectThirdsGuide(canvas, size);
+      case 'subject_viewpoint':
+        _drawSubjectViewpointGuide(canvas, size);
+      case 'candid_people':
+        _drawCandidPeopleGuide(canvas, size);
+      case 'stable_level':
+        _drawStableLevelGuide(canvas, size);
+      default:
+        _drawSubjectThirdsGuide(canvas, size);
+    }
+  }
+
+  Paint _linePaint({double alpha = 0.78, double width = 3}) {
+    return Paint()
+      ..color = (ready ? const Color(0xff19c37d) : Colors.white).withValues(
+        alpha: alpha,
+      )
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+  }
+
+  Paint _fillPaint({double alpha = 0.10}) {
+    return Paint()
+      ..color = (ready ? const Color(0xff19c37d) : Colors.white).withValues(
+        alpha: alpha,
+      )
+      ..style = PaintingStyle.fill;
+  }
+
+  void _drawTargetReticle(
+    Canvas canvas,
+    Offset center,
+    double radius, {
+    double alpha = 0.78,
+  }) {
+    final paint = _linePaint(alpha: alpha, width: 3);
+    final soft = _linePaint(alpha: 0.16, width: 12);
+    canvas.drawCircle(center, radius, soft);
+    canvas.drawCircle(center, radius, paint);
+    canvas.drawLine(
+      center.translate(-radius * 1.35, 0),
+      center.translate(-radius * 0.66, 0),
+      paint,
+    );
+    canvas.drawLine(
+      center.translate(radius * 0.66, 0),
+      center.translate(radius * 1.35, 0),
+      paint,
+    );
+    canvas.drawLine(
+      center.translate(0, -radius * 1.35),
+      center.translate(0, -radius * 0.66),
+      paint,
+    );
+    canvas.drawLine(
+      center.translate(0, radius * 0.66),
+      center.translate(0, radius * 1.35),
+      paint,
+    );
+  }
+
+  void _drawAnchorDot(Canvas canvas, Offset center, {double radius = 5}) {
+    canvas.drawCircle(center, radius + 5, _fillPaint(alpha: 0.18));
+    canvas.drawCircle(center, radius, _fillPaint(alpha: 0.74));
+  }
+
+  void _drawPeopleEyeThirdsGuide(Canvas canvas, Size size, bool fullBody) {
+    final centerX = size.width * rules.bodyCenterX;
+    final faceCenter = Offset(centerX, size.height * rules.faceCenterY);
+    final eyeY = size.height * rules.eyeLineY;
+    final footY = size.height * rules.footLineY;
+    final guidePaint = _linePaint(alpha: 0.54, width: 2.2);
+
+    _drawTargetReticle(
+      canvas,
+      faceCenter,
+      size.width * (fullBody ? 0.080 : 0.105),
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.10, eyeY),
+      Offset(size.width * 0.90, eyeY),
+      guidePaint,
+    );
+    _drawAnchorDot(canvas, Offset(centerX, eyeY), radius: 4.5);
+    canvas.drawLine(
+      Offset(centerX, faceCenter.dy + size.height * 0.08),
+      Offset(centerX, fullBody ? footY : size.height * 0.72),
+      _linePaint(alpha: 0.42, width: 2.4),
+    );
+
+    if (fullBody) {
+      final bodyRect = RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(centerX, (faceCenter.dy + footY) / 2),
+          width: size.width * 0.32,
+          height: footY - faceCenter.dy + size.height * 0.10,
+        ),
+        const Radius.circular(90),
+      );
+      canvas.drawRRect(bodyRect, _linePaint(alpha: 0.26, width: 2));
+      canvas.drawLine(
+        Offset(size.width * 0.18, footY),
+        Offset(size.width * 0.82, footY),
+        guidePaint,
+      );
+      _drawAnchorDot(canvas, Offset(centerX, footY), radius: 4.5);
+    } else {
+      final shoulderRect = Rect.fromCenter(
+        center: Offset(centerX, size.height * 0.60),
+        width: size.width * 0.50,
+        height: size.height * 0.28,
+      );
+      canvas.drawArc(
+        shoulderRect,
+        math.pi * 0.10,
+        math.pi * 0.80,
+        false,
+        _linePaint(alpha: 0.35, width: 2.4),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(centerX, size.height * 0.49),
+            width: size.width * 0.36,
+            height: size.height * 0.42,
+          ),
+          const Radius.circular(36),
+        ),
+        _linePaint(alpha: 0.22, width: 2),
+      );
+    }
+  }
+
+  void _drawSelfieGuide(Canvas canvas, Size size) {
+    final centerX = size.width * rules.bodyCenterX;
+    final faceCenter = Offset(centerX, size.height * rules.faceCenterY);
+    final eyeY = size.height * rules.eyeLineY;
+    final facePaint = _linePaint(alpha: 0.88, width: 3.4);
+    final softPaint = _linePaint(alpha: 0.14, width: 16);
+    final guidePaint = _linePaint(alpha: 0.50, width: 2.0);
+    final detectedFace = _bestFace();
+
+    final faceRect = Rect.fromCenter(
+      center: faceCenter,
+      width: size.width * 0.40,
+      height: size.width * 0.52,
+    );
+    canvas.drawOval(faceRect, softPaint);
+    canvas.drawOval(faceRect, facePaint);
+    final headroomY = faceRect.top - size.height * 0.035;
+    canvas.drawArc(
+      Rect.fromCenter(
+        center: Offset(faceCenter.dx, headroomY),
+        width: faceRect.width * 0.72,
+        height: size.height * 0.08,
+      ),
+      math.pi * 0.08,
+      math.pi * 0.84,
+      false,
+      _linePaint(alpha: 0.44, width: 2.1),
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.20, eyeY),
+      Offset(size.width * 0.80, eyeY),
+      guidePaint,
+    );
+    _drawAnchorDot(canvas, Offset(centerX, eyeY), radius: 4.5);
+    _drawSelfieEyeSlots(canvas, Offset(centerX, eyeY), size);
+    canvas.drawArc(
+      Rect.fromCenter(
+        center: faceCenter.translate(
+          -faceRect.width * 0.42,
+          faceRect.height * 0.06,
+        ),
+        width: faceRect.width * 0.38,
+        height: faceRect.height * 0.40,
+      ),
+      -math.pi * 0.44,
+      math.pi * 0.46,
+      false,
+      _linePaint(alpha: 0.32, width: 2),
+    );
+    canvas.drawArc(
+      Rect.fromCenter(
+        center: faceCenter.translate(
+          faceRect.width * 0.42,
+          faceRect.height * 0.06,
+        ),
+        width: faceRect.width * 0.38,
+        height: faceRect.height * 0.40,
+      ),
+      math.pi * 0.98,
+      math.pi * 0.46,
+      false,
+      _linePaint(alpha: 0.32, width: 2),
+    );
+    _drawAnchorDot(canvas, faceCenter, radius: 4.8);
+
+    if (detectedFace != null) {
+      final rect = Rect.fromLTWH(
+        detectedFace.x * size.width,
+        detectedFace.y * size.height,
+        detectedFace.width * size.width,
+        detectedFace.height * size.height,
+      );
+      canvas.drawOval(
+        rect.inflate(size.width * 0.012),
+        _linePaint(alpha: 0.24, width: 2),
+      );
+    }
+  }
+
+  void _drawSelfieEyeSlots(Canvas canvas, Offset center, Size size) {
+    final slotPaint = _linePaint(alpha: 0.46, width: 2.1);
+    final slotWidth = size.width * 0.115;
+    final slotHeight = size.height * 0.030;
+    for (final dx in [-size.width * 0.095, size.width * 0.095]) {
+      final rect = Rect.fromCenter(
+        center: center.translate(dx, 0),
+        width: slotWidth,
+        height: slotHeight,
+      );
+      canvas.drawArc(rect, math.pi * 0.05, math.pi * 0.90, false, slotPaint);
+    }
+  }
+
+  void _drawGroupPeopleGuide(Canvas canvas, Size size) {
+    final paint = _linePaint(alpha: 0.82, width: 3);
+    final soft = _linePaint(alpha: 0.17, width: 12);
+    final y = size.height * rules.faceCenterY;
+    final left = Offset(size.width * 0.38, y);
+    final right = Offset(size.width * 0.62, y);
+    for (final center in [left, right]) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: center,
+          width: size.width * 0.20,
+          height: size.width * 0.26,
+        ),
+        soft,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: center,
+          width: size.width * 0.20,
+          height: size.width * 0.26,
+        ),
+        paint,
+      );
+      _drawAnchorDot(canvas, center, radius: 4.5);
+    }
+    final groupRect = RRect.fromRectAndRadius(
+      Rect.fromLTRB(
+        size.width * 0.17,
+        size.height * 0.20,
+        size.width * 0.83,
+        size.height * rules.footLineY,
+      ),
+      const Radius.circular(28),
+    );
+    canvas.drawRRect(groupRect, _linePaint(alpha: 0.26, width: 2));
+    canvas.drawLine(
+      Offset(size.width * 0.14, size.height * rules.eyeLineY),
+      Offset(size.width * 0.86, size.height * rules.eyeLineY),
+      _linePaint(alpha: 0.52, width: 2.2),
+    );
+  }
+
+  void _drawHorizonThirdsGuide(Canvas canvas, Size size) {
+    final guide = _linePaint(alpha: 0.74, width: 3);
+    final thin = _linePaint(alpha: 0.36, width: 1.5);
+    final horizonY = size.height * rules.horizonY;
+    canvas.save();
+    canvas.translate(size.width / 2, horizonY);
+    canvas.rotate(estimate.horizonTiltDeg * math.pi / 180);
+    canvas.drawLine(
+      Offset(-size.width * 0.58, 0),
+      Offset(size.width * 0.58, 0),
+      guide,
+    );
+    canvas.restore();
+    canvas.drawLine(
+      Offset(0, size.height / 3),
+      Offset(size.width, size.height / 3),
+      thin,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 2 / 3),
+      Offset(size.width, size.height * 2 / 3),
+      thin,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.12, size.height * 0.92),
+      Offset(size.width * 0.45, horizonY),
+      thin,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.88, size.height * 0.92),
+      Offset(size.width * 0.55, horizonY),
+      thin,
+    );
+  }
+
+  void _drawSubjectThirdsGuide(Canvas canvas, Size size) {
+    final center = Offset(
+      size.width * rules.bodyCenterX,
+      size.height * rules.faceCenterY,
+    );
+    final thin = _linePaint(alpha: 0.30, width: 1.5);
+    canvas.drawLine(
+      Offset(size.width / 3, 0),
+      Offset(size.width / 3, size.height),
+      thin,
+    );
+    canvas.drawLine(
+      Offset(size.width * 2 / 3, 0),
+      Offset(size.width * 2 / 3, size.height),
+      thin,
+    );
+    canvas.drawLine(
+      Offset(0, size.height / 3),
+      Offset(size.width, size.height / 3),
+      thin,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 2 / 3),
+      Offset(size.width, size.height * 2 / 3),
+      thin,
+    );
+    _drawTargetReticle(canvas, center, size.width * 0.115);
+    final triangle = Path()
+      ..moveTo(center.dx, center.dy - size.width * 0.18)
+      ..lineTo(center.dx - size.width * 0.18, center.dy + size.width * 0.14)
+      ..lineTo(center.dx + size.width * 0.18, center.dy + size.width * 0.14)
+      ..close();
+    canvas.drawPath(triangle, _linePaint(alpha: 0.28, width: 2));
+    _drawAnchorDot(canvas, center, radius: 5);
+  }
+
+  void _drawSubjectViewpointGuide(Canvas canvas, Size size) {
+    _drawSubjectThirdsGuide(canvas, size);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(
+            size.width * rules.bodyCenterX,
+            size.height * rules.faceCenterY,
+          ),
+          width: size.width * 0.48,
+          height: size.height * 0.34,
+        ),
+        const Radius.circular(18),
+      ),
+      _linePaint(alpha: 0.34, width: 2),
+    );
+  }
+
+  void _drawStillLifeGuide(Canvas canvas, Size size) {
+    _drawSubjectThirdsGuide(canvas, size);
+    final objects = _nonPersonObjects();
+    final paint = _linePaint(alpha: 0.54, width: 2.4);
+    if (objects.isEmpty) {
+      return;
+    }
+    final topObjects = objects.take(3).toList(growable: false);
+    final centers = topObjects
+        .map((object) {
+          return Offset(
+            (object.x + object.width / 2) * size.width,
+            (object.y + object.height / 2) * size.height,
+          );
+        })
+        .toList(growable: false);
+    for (final object in topObjects) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            object.x * size.width,
+            object.y * size.height,
+            object.width * size.width,
+            object.height * size.height,
+          ),
+          const Radius.circular(12),
+        ),
+        _linePaint(alpha: 0.30, width: 2),
+      );
+    }
+    if (centers.length >= 3) {
+      final triangle = Path()
+        ..moveTo(centers[0].dx, centers[0].dy)
+        ..lineTo(centers[1].dx, centers[1].dy)
+        ..lineTo(centers[2].dx, centers[2].dy)
+        ..close();
+      canvas.drawPath(triangle, paint);
+    } else {
+      for (final center in centers) {
+        _drawTargetReticle(canvas, center, size.width * 0.07, alpha: 0.55);
+      }
+    }
+  }
+
+  void _drawObjectGuide(Canvas canvas, Size size) {
+    final objects = _nonPersonObjects();
+    final object = objects.isEmpty ? null : objects.first;
+    if (object == null) {
+      _drawSubjectViewpointGuide(canvas, size);
+      return;
+    }
+    final rect = Rect.fromLTWH(
+      object.x * size.width,
+      object.y * size.height,
+      object.width * size.width,
+      object.height * size.height,
+    ).inflate(size.width * 0.025);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, const Radius.circular(18)),
+      _linePaint(alpha: 0.72, width: 3),
+    );
+    _drawTargetReticle(
+      canvas,
+      rect.center,
+      math.min(rect.width, rect.height) * 0.22,
+    );
+    final negativeSpacePaint = _linePaint(alpha: 0.22, width: 1.5);
+    canvas.drawLine(
+      Offset(size.width / 3, 0),
+      Offset(size.width / 3, size.height),
+      negativeSpacePaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 2 / 3, 0),
+      Offset(size.width * 2 / 3, size.height),
+      negativeSpacePaint,
+    );
+  }
+
+  List<DetectedObject> _nonPersonObjects() {
+    final objects = visionResult?.objects ?? const <DetectedObject>[];
+    return objects.where((object) => object.label != 'person').toList()
+      ..sort((a, b) => b.confidence.compareTo(a.confidence));
+  }
+
+  DetectedFace? _bestFace() {
+    final faces = visionResult?.faces ?? const <DetectedFace>[];
+    if (faces.isEmpty) return null;
+    final sorted = [...faces]
+      ..sort((a, b) => (b.width * b.height).compareTo(a.width * a.height));
+    return sorted.first;
+  }
+
+  void _drawCandidPeopleGuide(Canvas canvas, Size size) {
+    _drawPeopleEyeThirdsGuide(canvas, size, false);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          size.width * 0.14,
+          size.height * 0.18,
+          size.width * 0.72,
+          size.height * 0.62,
+        ),
+        const Radius.circular(24),
+      ),
+      _linePaint(alpha: 0.26, width: 2),
+    );
+  }
+
+  void _drawStableLevelGuide(Canvas canvas, Size size) {
+    final center = Offset(
+      size.width * rules.bodyCenterX,
+      size.height * rules.faceCenterY,
+    );
+    canvas.drawCircle(
+      center,
+      size.width * 0.18,
+      _linePaint(alpha: 0.28, width: 12),
+    );
+    canvas.drawCircle(
+      center,
+      size.width * 0.18,
+      _linePaint(alpha: 0.70, width: 2.5),
+    );
+    canvas.save();
+    canvas.translate(size.width / 2, size.height * rules.horizonY);
+    canvas.rotate(estimate.horizonTiltDeg * math.pi / 180);
+    canvas.drawLine(
+      Offset(-size.width * 0.58, 0),
+      Offset(size.width * 0.58, 0),
+      _linePaint(alpha: 0.62, width: 3),
+    );
+    canvas.restore();
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          size.width * 0.18,
+          size.height * 0.20,
+          size.width * 0.64,
+          size.height * 0.62,
+        ),
+        const Radius.circular(24),
+      ),
+      _linePaint(alpha: 0.32, width: 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CompositionGuidePainter oldDelegate) {
+    return oldDelegate.mode != mode ||
+        oldDelegate.rules != rules ||
+        oldDelegate.estimate != estimate ||
+        oldDelegate.visionResult != visionResult ||
+        oldDelegate.ready != ready;
+  }
+}
