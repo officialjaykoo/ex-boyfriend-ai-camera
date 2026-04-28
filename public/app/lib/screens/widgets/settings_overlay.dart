@@ -345,7 +345,8 @@ class _CameraSettingsOverlay extends StatelessWidget {
                             _SettingsChip(
                               icon: Icons.image_outlined,
                               label: 'JPG',
-                              selected: false,
+                              selected:
+                                  imageOutputFormat == ImageOutputFormat.jpg,
                               onTap: () =>
                                   onImageFormatSelected(ImageOutputFormat.jpg),
                             ),

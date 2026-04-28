@@ -1,13 +1,25 @@
 package com.exbfcamera.exbf_camera
 
 import android.content.Intent
+import android.os.Bundle
 import android.provider.MediaStore
 import android.view.KeyEvent
+import android.view.WindowManager
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        keepCameraPreviewAwake()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        keepCameraPreviewAwake()
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         flutterEngine.plugins.add(VolumeButtonPlugin())
@@ -35,6 +47,10 @@ class MainActivity : FlutterActivity() {
             }
             else -> super.onKeyDown(keyCode, event)
         }
+    }
+
+    private fun keepCameraPreviewAwake() {
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     private fun openGallery() {

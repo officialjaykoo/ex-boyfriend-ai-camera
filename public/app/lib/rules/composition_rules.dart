@@ -158,13 +158,13 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.12,
       'detectionConfidence': 0.08,
     },
-    captureAdvice: ['눈을 위쪽 1/3에 맞춰', '머리 위 여백을 줄여', '손발이 잘리지 않게'],
+    captureAdvice: ['카메라를 눈높이에 맞춰요', '머리 위 여백을 조금 줄여요', '손발이 잘리지 않게 뒤로 빼요'],
   ),
   ShotMode.selfie: CompositionRuleSet(
     guideType: 'people_eye_thirds',
     bodyCenterX: 0.50,
-    faceCenterY: 0.34,
-    eyeLineY: 0.36,
+    faceCenterY: 0.38,
+    eyeLineY: 0.34,
     footLineY: 0.76,
     headroom: 0.10,
     horizonY: 0.52,
@@ -178,7 +178,7 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.08,
       'detectionConfidence': 0.14,
     },
-    captureAdvice: ['얼굴을 조금 위로', '눈을 위쪽 1/3에 맞춰', '배경 가장자리를 정리'],
+    captureAdvice: ['카메라를 눈보다 살짝 위로', '아래로 살짝 기울여요', '턱 아래에서 올려찍지 않게'],
   ),
   ShotMode.group: CompositionRuleSet(
     guideType: 'group_people',
@@ -198,7 +198,7 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.12,
       'detectionConfidence': 0.10,
     },
-    captureAdvice: ['두 얼굴 높이를 맞춰', '두 사람 간격을 줄여', '중앙 균형을 맞춰'],
+    captureAdvice: ['두 얼굴 높이를 맞춰요', '두 사람이 조금 더 붙어요', '카메라를 두 사람 중앙에 맞춰요'],
   ),
   ShotMode.landscape: CompositionRuleSet(
     guideType: 'horizon_thirds',
@@ -218,7 +218,7 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.04,
       'detectionConfidence': 0.18,
     },
-    captureAdvice: ['수평을 맞춰', '지평선을 1/3에 맞춰', '리딩라인을 살려'],
+    captureAdvice: ['카메라 각도를 바로 세워요', '지평선을 위아래 1/3에 맞춰요', '길이나 선이 안쪽으로 이어지게 해요'],
   ),
   ShotMode.stillLife: CompositionRuleSet(
     guideType: 'subject_thirds',
@@ -238,7 +238,7 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.00,
       'detectionConfidence': 0.20,
     },
-    captureAdvice: ['주 피사체를 분명하게', '삼분할 교차점에 맞춰', '주변 소품을 줄여'],
+    captureAdvice: ['피사체가 주인공처럼 보이게 해요', '카메라를 살짝 위에서 내려봐요', '주변 소품을 덜어내요'],
   ),
   ShotMode.object: CompositionRuleSet(
     guideType: 'subject_viewpoint',
@@ -258,7 +258,7 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.00,
       'detectionConfidence': 0.20,
     },
-    captureAdvice: ['사물을 더 크게', '배경을 비워', '45도나 정면으로 정리'],
+    captureAdvice: ['사물이 프레임을 더 채우게 해요', '배경 여백을 깨끗하게 비워요', '정면이나 45도로 각도를 정리해요'],
   ),
   ShotMode.candid: CompositionRuleSet(
     guideType: 'candid_people',
@@ -278,7 +278,7 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.12,
       'detectionConfidence': 0.18,
     },
-    captureAdvice: ['행동이 보이게', '방향 앞쪽 여백을 남겨', '배경을 단순하게'],
+    captureAdvice: ['움직이는 방향 앞을 비워요', '표정이나 손동작이 보이게 해요', '배경이 복잡하면 한 걸음 옮겨요'],
   ),
   ShotMode.lowLight: CompositionRuleSet(
     guideType: 'stable_level',
@@ -298,6 +298,6 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.08,
       'detectionConfidence': 0.18,
     },
-    captureAdvice: ['수평을 먼저 맞춰', '밝은 배경을 피해', '흔들리지 않게 멈춰'],
+    captureAdvice: ['카메라를 몸에 붙여 고정해요', '밝은 간판은 얼굴 뒤에서 빼요', '수평을 맞춘 뒤 잠깐 멈춰요'],
   ),
 };

@@ -34,9 +34,9 @@
         "footLineY"
       ],
       "captureAdvice": [
-        "눈을 위쪽 1/3에 맞춰",
-        "머리 위 여백을 줄여",
-        "손발이 잘리지 않게"
+        "카메라를 눈높이에 맞춰요",
+        "머리 위 여백을 조금 줄여요",
+        "손발이 잘리지 않게 뒤로 빼요"
       ],
       "teacherNotes": [
         "Use the eye line near the upper third for people photos.",
@@ -56,8 +56,8 @@
     "selfie": {
       "guideType": "people_eye_thirds",
       "bodyCenterX": 0.5,
-      "faceCenterY": 0.34,
-      "eyeLineY": 0.36,
+      "faceCenterY": 0.38,
+      "eyeLineY": 0.34,
       "footLineY": 0.76,
       "headroom": 0.1,
       "horizonY": 0.52,
@@ -83,9 +83,9 @@
         "bodyCenterX"
       ],
       "captureAdvice": [
-        "얼굴을 조금 위로",
-        "눈을 위쪽 1/3에",
-        "배경 가장자리를 정리"
+        "카메라를 눈보다 살짝 위로",
+        "아래로 살짝 기울여요",
+        "턱 아래에서 올려찍지 않게"
       ],
       "teacherNotes": [
         "Keep the face close enough to read clearly without cropping the head.",
@@ -131,9 +131,9 @@
         "bodyCenterX"
       ],
       "captureAdvice": [
-        "두 얼굴 높이를 맞춰",
-        "두 사람 간격을 줄여",
-        "중앙 균형을 맞춰"
+        "두 얼굴 높이를 맞춰요",
+        "두 사람이 조금 더 붙어요",
+        "카메라를 두 사람 중앙에 맞춰요"
       ],
       "teacherNotes": [
         "Keep a small group close enough that faces remain readable.",
@@ -178,9 +178,9 @@
         "bodyCenterX"
       ],
       "captureAdvice": [
-        "수평을 맞춰",
-        "지평선을 1/3에",
-        "리딩라인을 살려"
+        "카메라 각도를 바로 세워요",
+        "지평선을 위아래 1/3에 맞춰요",
+        "길이나 선이 안쪽으로 이어지게 해요"
       ],
       "teacherNotes": [
         "Place the horizon on an upper or lower third instead of the exact middle.",
@@ -226,9 +226,9 @@
         "eyeLineY"
       ],
       "captureAdvice": [
-        "주 피사체를 분명하게",
-        "삼분할 교차점에 맞춰",
-        "주변 소품을 줄여"
+        "피사체가 주인공처럼 보이게 해요",
+        "카메라를 살짝 위에서 내려봐요",
+        "주변 소품을 덜어내요"
       ],
       "teacherNotes": [
         "Arrange objects so the focal point is obvious.",
@@ -273,9 +273,9 @@
         "faceCenterY"
       ],
       "captureAdvice": [
-        "사물을 더 크게",
-        "배경을 비워",
-        "45도나 정면으로 정리"
+        "사물이 프레임을 더 채우게 해요",
+        "배경 여백을 깨끗하게 비워요",
+        "정면이나 45도로 각도를 정리해요"
       ],
       "teacherNotes": [
         "Frame the object as the clear subject of interest.",
@@ -321,9 +321,9 @@
         "eyeLineY"
       ],
       "captureAdvice": [
-        "행동이 보이게",
-        "방향 앞쪽 여백을 남겨",
-        "배경을 단순하게"
+        "움직이는 방향 앞을 비워요",
+        "표정이나 손동작이 보이게 해요",
+        "배경이 복잡하면 한 걸음 옮겨요"
       ],
       "teacherNotes": [
         "Show people doing something rather than forcing a posed shot.",
@@ -369,9 +369,9 @@
         "faceCenterY"
       ],
       "captureAdvice": [
-        "수평을 먼저 맞춰",
-        "밝은 배경을 피해",
-        "흔들리지 않게 멈춰"
+        "카메라를 몸에 붙여 고정해요",
+        "밝은 간판은 얼굴 뒤에서 빼요",
+        "수평을 맞춘 뒤 잠깐 멈춰요"
       ],
       "teacherNotes": [
         "Use a stable, simple composition when weak light makes detail harder to read.",
