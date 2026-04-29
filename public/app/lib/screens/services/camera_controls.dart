@@ -21,6 +21,43 @@ extension _CameraControls on _CameraScreenState {
     });
   }
 
+  void _setShotMode(ShotMode mode) {
+    final nextMode = ShotModePolicy.normalizeVisibleMode(mode);
+    if (_shotMode == nextMode) {
+      unawaited(_applyShotModeCameraPolicy(nextMode));
+      return;
+    }
+    setState(() {
+      _shotMode = nextMode;
+      _autoCapture.reset();
+      _vision.clearResult();
+      if (!ShotModePolicy.canAutoCapture(nextMode)) {
+        _autoCaptureEnabled = false;
+      }
+      _status = nextMode == ShotMode.selfie
+          ? 'Selfie front camera'
+          : 'Rear camera guide';
+    });
+    unawaited(_applyShotModeCameraPolicy(nextMode));
+    unawaited(_saveSetting('shotMode', nextMode.name));
+  }
+
+  Future<void> _applyShotModeCameraPolicy(ShotMode mode) async {
+    await _applyAnalysisModeForShotMode(mode);
+    await _syncCameraFacingForShotMode(mode);
+  }
+
+  Future<void> _syncCameraFacingForShotMode(ShotMode mode) async {
+    if (_isCameraSuspended ||
+        !_nativeCameraReady ||
+        _isCameraOperationInFlight) {
+      return;
+    }
+    final wantsFrontCamera = mode == ShotMode.selfie;
+    if (wantsFrontCamera == _isFrontCamera) return;
+    await _switchCamera();
+  }
+
   Future<void> _setFlash(FlashMode mode) async {
     _flashMode = mode;
     unawaited(_saveSetting('flashMode', mode.name));
@@ -253,18 +290,15 @@ extension _CameraControls on _CameraScreenState {
     unawaited(_saveSetting('showVisionDebug', _ui.showVisionDebug));
   }
 
-  Future<void> _focusAt(TapDownDetails details, BuildContext context) async {
-    final size = context.size;
-    if (size != null && _isZoomBadgeTap(details.localPosition, size)) {
+  Future<void> _focusAt(TapDownDetails details, Size previewSize) async {
+    if (_isZoomBadgeTap(details.localPosition, previewSize)) {
       return;
     }
-    if (size != null) {
-      final point = Offset(
-        (details.localPosition.dx / size.width).clamp(0, 1).toDouble(),
-        (details.localPosition.dy / size.height).clamp(0, 1).toDouble(),
-      );
-      await _NativeCameraBridge.focus(point);
-    }
+    final point = Offset(
+      (details.localPosition.dx / previewSize.width).clamp(0, 1).toDouble(),
+      (details.localPosition.dy / previewSize.height).clamp(0, 1).toDouble(),
+    );
+    await _NativeCameraBridge.focus(point);
     _focusTimer?.cancel();
     setState(() {
       _ui.focusPoint = details.localPosition;
@@ -278,7 +312,7 @@ extension _CameraControls on _CameraScreenState {
   bool _isZoomBadgeTap(Offset point, Size previewSize) {
     const badgeSize = 58.0;
     const margin = 16.0;
-    const touchPadding = 12.0;
+    const touchPadding = 20.0;
     final left = previewSize.width - margin - badgeSize - touchPadding;
     final top = previewSize.height - margin - badgeSize - touchPadding;
     return point.dx >= left && point.dy >= top;

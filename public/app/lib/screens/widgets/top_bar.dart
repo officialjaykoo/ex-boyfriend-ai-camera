@@ -134,9 +134,7 @@ class _TopToolbar extends StatelessWidget {
                   icon: Icon(
                     Icons.settings_outlined,
                     size: 21,
-                    color: showGuides || showGrid || showScore
-                        ? _accentPink
-                        : const Color(0xff4d4d4d),
+                    color: const Color(0xff4d4d4d),
                   ),
                   onPressed: onSettingsTap,
                 ),

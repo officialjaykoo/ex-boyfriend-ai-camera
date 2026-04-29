@@ -76,6 +76,8 @@ extension _CameraLifecycle on _CameraScreenState {
           message: 'CameraX ready',
         );
       });
+      await _syncCameraFacingForShotMode(_shotMode);
+      if (!mounted) return;
       if (_deviceCapability.supported) {
         unawaited(_prepareAiAfterCameraStart());
       } else {

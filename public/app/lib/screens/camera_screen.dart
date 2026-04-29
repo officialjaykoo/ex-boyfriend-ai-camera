@@ -267,114 +267,126 @@ class _CameraScreenState extends State<CameraScreen>
                         aspectRatio: _previewAspectRatio(),
                         child: !_nativeCameraReady
                             ? _LoadingPreview(status: _status)
-                            : GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTapDown: (details) =>
-                                    _focusAt(details, context),
-                                onScaleStart: (_) {
-                                  _zoomAtScaleStart = _zoom;
-                                },
-                                onScaleUpdate: (details) {
-                                  if (details.pointerCount >= 2) {
-                                    if ((details.scale - 1).abs() < 0.02) {
-                                      return;
-                                    }
-                                    _setZoom(_zoomAtScaleStart * details.scale);
-                                    return;
-                                  }
-                                  if (details.pointerCount == 1 &&
-                                      details.focalPointDelta.dy.abs() >
-                                          details.focalPointDelta.dx.abs()) {
-                                    _adjustExposureByDrag(
-                                      details.focalPointDelta.dy,
-                                    );
-                                  }
-                                },
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    if (_nativeTextureId != null)
-                                      _FilteredCameraPreview(
-                                        textureId: _nativeTextureId!,
-                                        style: _ui.styleEffect,
-                                        set: _ui.setEffect,
-                                        retouch: _ui.retouchEffect,
-                                      ),
-                                    _EffectPreviewOverlay(
-                                      style: _ui.styleEffect,
-                                      set: _ui.setEffect,
-                                      retouch: _ui.retouchEffect,
-                                    ),
-                                    if (_ui.stickerEffect != StickerEffect.none)
-                                      _StickerOverlay(
-                                        sticker: _ui.stickerEffect,
-                                        mode: _shotMode,
-                                        visionResult: viewportVisionResult,
-                                        estimate: composition.estimate,
-                                      ),
-                                    if (_ui.showGrid) const _RuleGrid(),
-                                    if (_aiEnabled && _ui.showGuides)
-                                      _CompositionGuideOverlay(
-                                        mode: _shotMode,
-                                        rules: rules,
-                                        estimate: composition.estimate,
-                                        visionResult: viewportVisionResult,
-                                        ready: composition.ready,
-                                      ),
-                                    if (_aiEnabled && _ui.showScore)
-                                      _ScoreBadge(
-                                        cue: composition.cue,
-                                        ready: composition.ready,
-                                      ),
-                                    if (_aiEnabled && _ui.showVisionDebug)
-                                      _VisionDebugOverlay(
-                                        result: viewportVisionResult,
-                                      ),
-                                    if (_countdownSeconds != null)
-                                      _CountdownBadge(
-                                        seconds: _countdownSeconds!,
-                                      ),
-                                    if (_isRecording &&
-                                        _recordingStartedAt != null)
-                                      _RecordingTimerBadge(
-                                        startedAt: _recordingStartedAt!,
-                                      ),
-                                    if (_ui.focusPoint != null)
-                                      _FocusReticle(point: _ui.focusPoint!),
-                                    if (_ui.showExposureGesture)
-                                      _ExposureGestureBadge(
-                                        exposure: _exposure,
-                                      ),
-                                    if (_shotMode == ShotMode.lowLight)
-                                      const Positioned(
-                                        left: 14,
-                                        top: 62,
-                                        child: _NightFloatIcon(),
-                                      ),
-                                    Positioned(
-                                      right: 16,
-                                      bottom: 16,
-                                      child: _ZoomBadge(
-                                        zoom: _zoom,
-                                        onTap: _cycleZoom,
-                                      ),
-                                    ),
-                                    if (_ui.thumbnailPath != null)
-                                      Positioned(
-                                        left: 18,
-                                        bottom: 18,
-                                        child: _ShotThumbnail(
-                                          path: _ui.thumbnailPath!,
-                                          onTap: () async {
-                                            _thumbnailTimer?.cancel();
-                                            setState(_ui.clearThumbnail);
-                                            await _openGallery();
-                                          },
-                                          isVideo: _ui.thumbnailIsVideo,
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final previewSize = Size(
+                                    constraints.maxWidth,
+                                    constraints.maxHeight,
+                                  );
+                                  return GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTapDown: (details) =>
+                                        _focusAt(details, previewSize),
+                                    onScaleStart: (_) {
+                                      _zoomAtScaleStart = _zoom;
+                                    },
+                                    onScaleUpdate: (details) {
+                                      if (details.pointerCount >= 2) {
+                                        if ((details.scale - 1).abs() < 0.02) {
+                                          return;
+                                        }
+                                        _setZoom(
+                                          _zoomAtScaleStart * details.scale,
+                                        );
+                                        return;
+                                      }
+                                      if (details.pointerCount == 1 &&
+                                          details.focalPointDelta.dy.abs() >
+                                              details.focalPointDelta.dx
+                                                  .abs()) {
+                                        _adjustExposureByDrag(
+                                          details.focalPointDelta.dy,
+                                        );
+                                      }
+                                    },
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        if (_nativeTextureId != null)
+                                          _FilteredCameraPreview(
+                                            textureId: _nativeTextureId!,
+                                            style: _ui.styleEffect,
+                                            set: _ui.setEffect,
+                                            retouch: _ui.retouchEffect,
+                                          ),
+                                        _EffectPreviewOverlay(
+                                          style: _ui.styleEffect,
+                                          set: _ui.setEffect,
+                                          retouch: _ui.retouchEffect,
                                         ),
-                                      ),
-                                  ],
-                                ),
+                                        if (_ui.stickerEffect !=
+                                            StickerEffect.none)
+                                          _StickerOverlay(
+                                            sticker: _ui.stickerEffect,
+                                            mode: _shotMode,
+                                            visionResult: viewportVisionResult,
+                                            estimate: composition.estimate,
+                                          ),
+                                        if (_ui.showGrid) const _RuleGrid(),
+                                        if (_aiEnabled && _ui.showGuides)
+                                          _CompositionGuideOverlay(
+                                            mode: _shotMode,
+                                            rules: rules,
+                                            estimate: composition.estimate,
+                                            visionResult: viewportVisionResult,
+                                            ready: composition.ready,
+                                          ),
+                                        if (_aiEnabled && _ui.showScore)
+                                          _ScoreBadge(
+                                            cue: composition.cue,
+                                            ready: composition.ready,
+                                          ),
+                                        if (_aiEnabled && _ui.showVisionDebug)
+                                          _VisionDebugOverlay(
+                                            result: viewportVisionResult,
+                                          ),
+                                        if (_countdownSeconds != null)
+                                          _CountdownBadge(
+                                            seconds: _countdownSeconds!,
+                                          ),
+                                        if (_isRecording &&
+                                            _recordingStartedAt != null)
+                                          _RecordingTimerBadge(
+                                            startedAt: _recordingStartedAt!,
+                                          ),
+                                        if (_ui.focusPoint != null)
+                                          _FocusReticle(point: _ui.focusPoint!),
+                                        if (_ui.showExposureGesture)
+                                          _ExposureGestureBadge(
+                                            exposure: _exposure,
+                                          ),
+                                        if (_shotMode == ShotMode.lowLight)
+                                          const Positioned(
+                                            left: 14,
+                                            top: 62,
+                                            child: _NightFloatIcon(),
+                                          ),
+                                        Positioned(
+                                          right: 16,
+                                          bottom: 16,
+                                          child: _ZoomBadge(
+                                            zoom: _zoom,
+                                            onTap: _cycleZoom,
+                                          ),
+                                        ),
+                                        if (_ui.thumbnailPath != null)
+                                          Positioned(
+                                            left: 18,
+                                            bottom: 18,
+                                            child: _ShotThumbnail(
+                                              path: _ui.thumbnailPath!,
+                                              onTap: () async {
+                                                _thumbnailTimer?.cancel();
+                                                setState(_ui.clearThumbnail);
+                                                await _openGallery();
+                                              },
+                                              isVideo: _ui.thumbnailIsVideo,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                       ),
                     ),
@@ -386,19 +398,7 @@ class _CameraScreenState extends State<CameraScreen>
                   toolPanel: _ui.toolPanel,
                   isRecording: _isRecording,
                   isBusy: _isBusy,
-                  onShotModeChanged: (mode) {
-                    final nextMode = ShotModePolicy.normalizeVisibleMode(mode);
-                    setState(() {
-                      _shotMode = nextMode;
-                      _autoCapture.reset();
-                      if (!ShotModePolicy.canAutoCapture(nextMode)) {
-                        _autoCaptureEnabled = false;
-                        _status = 'Selfie face mode';
-                      }
-                    });
-                    unawaited(_applyAnalysisModeForShotMode(nextMode));
-                    unawaited(_saveSetting('shotMode', nextMode.name));
-                  },
+                  onShotModeChanged: _setShotMode,
                   onMediaModeChanged: _setMediaMode,
                   onToolSelected: _toggleToolPanel,
                   onGalleryTap: _openGallery,
