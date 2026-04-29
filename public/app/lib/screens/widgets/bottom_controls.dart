@@ -37,9 +37,13 @@ class _BottomControlsState extends State<_BottomControls> {
   @override
   void initState() {
     super.initState();
+    final initialIndex = math.max(
+      0,
+      ShotModePolicy.visibleModes.indexOf(widget.shotMode),
+    );
     _modeController = PageController(
-      viewportFraction: 0.24,
-      initialPage: ShotMode.values.indexOf(widget.shotMode),
+      viewportFraction: 0.30,
+      initialPage: initialIndex,
     );
   }
 
@@ -47,7 +51,10 @@ class _BottomControlsState extends State<_BottomControls> {
   void didUpdateWidget(covariant _BottomControls oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.shotMode != widget.shotMode && _modeController.hasClients) {
-      final target = ShotMode.values.indexOf(widget.shotMode);
+      final target = math.max(
+        0,
+        ShotModePolicy.visibleModes.indexOf(widget.shotMode),
+      );
       final current = (_modeController.page ?? _modeController.initialPage)
           .round();
       if (target != current) {
@@ -78,12 +85,12 @@ class _BottomControlsState extends State<_BottomControls> {
             height: 40,
             child: PageView.builder(
               controller: _modeController,
-              itemCount: ShotMode.values.length,
+              itemCount: ShotModePolicy.visibleModes.length,
               padEnds: true,
               onPageChanged: (index) =>
-                  widget.onShotModeChanged(ShotMode.values[index]),
+                  widget.onShotModeChanged(ShotModePolicy.visibleModes[index]),
               itemBuilder: (context, index) {
-                final mode = ShotMode.values[index];
+                final mode = ShotModePolicy.visibleModes[index];
                 final selected = mode == widget.shotMode;
                 return Center(
                   child: GestureDetector(
@@ -128,109 +135,29 @@ class _BottomControlsState extends State<_BottomControls> {
           ),
           const SizedBox(height: 6),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _ToolButton(
-                icon: Icons.mood_outlined,
-                label: '스티커',
-                selected: widget.toolPanel == ToolPanel.sticker,
-                onTap: () => widget.onToolSelected(ToolPanel.sticker),
-              ),
-              _ToolButton(
-                icon: Icons.auto_awesome_outlined,
-                label: '색감',
-                selected: widget.toolPanel == ToolPanel.style,
-                onTap: () => widget.onToolSelected(ToolPanel.style),
-              ),
-              _ShutterButton(
-                mediaMode: widget.mediaMode,
-                isRecording: widget.isRecording,
-                isBusy: widget.isBusy,
-                onTap: widget.onShutterTap,
-              ),
-              _ToolButton(
-                icon: Icons.filter_vintage_outlined,
-                label: '무드',
-                selected: widget.toolPanel == ToolPanel.set,
-                onTap: () => widget.onToolSelected(ToolPanel.set),
-              ),
-              _ToolButton(
-                icon: Icons.brush_outlined,
-                label: '리터치',
-                selected: widget.toolPanel == ToolPanel.retouch,
-                onTap: () => widget.onToolSelected(ToolPanel.retouch),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _MediaTextButton(
-                icon: Icons.photo_outlined,
+                icon: Icons.photo_library_outlined,
                 label: '앨범',
                 selected: false,
                 onTap: widget.onGalleryTap,
               ),
-              _MediaTextButton(
-                icon: Icons.videocam_outlined,
-                label: '동영상',
-                selected: widget.mediaMode == MediaMode.video,
-                onTap: () => widget.onMediaModeChanged(MediaMode.video),
+              _ShutterButton(
+                mediaMode: MediaMode.photo,
+                isRecording: widget.isRecording,
+                isBusy: widget.isBusy,
+                onTap: widget.onShutterTap,
               ),
               _MediaTextButton(
                 icon: Icons.camera_alt_outlined,
                 label: '사진',
-                selected: widget.mediaMode == MediaMode.photo,
+                selected: true,
                 onTap: () => widget.onMediaModeChanged(MediaMode.photo),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ToolButton extends StatelessWidget {
-  const _ToolButton({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 24,
-              color: selected ? _accentPink : Colors.black54,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: selected ? _accentPink : Colors.black87,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -231,7 +231,9 @@ extension _CameraLifecycle on _CameraScreenState {
     try {
       final document = await loadCompositionRuleDocumentFromAsset();
       if (!mounted) return;
-      setState(() => _rules = {...compositionRules, ...document.modes});
+      setState(
+        () => _composition.rules = {...compositionRules, ...document.modes},
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _status = 'Rules error');
@@ -266,8 +268,7 @@ extension _CameraLifecycle on _CameraScreenState {
     _recordingLimitTimer?.cancel();
     _setSession(_CameraSessionPhase.suspended, message: 'Camera paused');
     _recordingStartedAt = null;
-    _focusPoint = null;
-    _showExposureGesture = false;
+    _ui.clearTransientOverlays();
     _analysisPipeline.reset();
     _analysisSubscription?.pause();
     await _NativeCameraBridge.stop();

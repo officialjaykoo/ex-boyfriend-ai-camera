@@ -1,44 +1,4 @@
-part of 'package:exbf_camera/screens/camera_screen.dart';
-
-class _RuleGrid extends StatelessWidget {
-  const _RuleGrid();
-
-  @override
-  Widget build(BuildContext context) =>
-      CustomPaint(painter: _RuleGridPainter());
-}
-
-class _RuleGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.34)
-      ..strokeWidth = 1;
-    canvas.drawLine(
-      Offset(size.width / 3, 0),
-      Offset(size.width / 3, size.height),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 2 / 3, 0),
-      Offset(size.width * 2 / 3, size.height),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(0, size.height / 3),
-      Offset(size.width, size.height / 3),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(0, size.height * 2 / 3),
-      Offset(size.width, size.height * 2 / 3),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+﻿part of 'package:exbf_camera/screens/camera_screen.dart';
 
 class _CompositionGuideOverlay extends StatelessWidget {
   const _CompositionGuideOverlay({
@@ -66,115 +26,6 @@ class _CompositionGuideOverlay extends StatelessWidget {
         ready: ready,
       ),
     );
-  }
-}
-
-class _VisionDebugOverlay extends StatelessWidget {
-  const _VisionDebugOverlay({required this.result});
-
-  final VisionFrameResult? result;
-
-  @override
-  Widget build(BuildContext context) {
-    final result = this.result;
-    if (result == null) return const SizedBox.shrink();
-    return CustomPaint(painter: _VisionDebugPainter(result));
-  }
-}
-
-class _VisionDebugPainter extends CustomPainter {
-  const _VisionDebugPainter(this.result);
-
-  final VisionFrameResult result;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final boxPaint = Paint()
-      ..color = _accentPink.withValues(alpha: 0.92)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4;
-    final labelPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.54)
-      ..style = PaintingStyle.fill;
-    final posePaint = Paint()
-      ..color = const Color(0xff19c37d).withValues(alpha: 0.92)
-      ..style = PaintingStyle.fill;
-    final facePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.92)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2;
-    final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-    );
-
-    final objectsToDraw = [
-      ...result.objects.where((object) => object.label == 'person'),
-      ...result.objects.where((object) => object.label != 'person'),
-    ].take(6);
-
-    for (final object in objectsToDraw) {
-      final rect = Rect.fromLTWH(
-        object.x * size.width,
-        object.y * size.height,
-        object.width * size.width,
-        object.height * size.height,
-      );
-      canvas.drawRect(rect, boxPaint);
-      final label = '${object.label} ${(object.confidence * 100).round()}%';
-      textPainter.text = TextSpan(
-        text: label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-        ),
-      );
-      textPainter.layout();
-      final labelRect = Rect.fromLTWH(
-        rect.left,
-        (rect.top - 20).clamp(0, size.height - 18).toDouble(),
-        textPainter.width + 8,
-        18,
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(labelRect, const Radius.circular(5)),
-        labelPaint,
-      );
-      textPainter.paint(canvas, labelRect.topLeft + const Offset(4, 2));
-    }
-
-    for (final face in result.faces.take(4)) {
-      final rect = Rect.fromLTWH(
-        face.x * size.width,
-        face.y * size.height,
-        face.width * size.width,
-        face.height * size.height,
-      );
-      canvas.drawOval(rect, facePaint);
-      for (final point in [
-        face.leftEye,
-        face.rightEye,
-        face.nose,
-      ].whereType<Offset>()) {
-        canvas.drawCircle(
-          Offset(point.dx * size.width, point.dy * size.height),
-          3.6,
-          Paint()..color = _accentPink,
-        );
-      }
-    }
-
-    for (final point in result.pose.where((point) => point.confidence > 0.18)) {
-      final center = Offset(point.x * size.width, point.y * size.height);
-      canvas.drawCircle(center, 5.5, Paint()..color = Colors.black45);
-      canvas.drawCircle(center, 3.4, posePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _VisionDebugPainter oldDelegate) {
-    return oldDelegate.result != result;
   }
 }
 
@@ -300,11 +151,7 @@ class _CompositionGuidePainter extends CustomPainter {
     final guidePaint = _linePaint(alpha: 0.54, width: 2.2);
     final faceRadius = size.width * (fullBody ? 0.080 : 0.105);
 
-    _drawTargetReticle(
-      canvas,
-      faceCenter,
-      faceRadius,
-    );
+    _drawTargetReticle(canvas, faceCenter, faceRadius);
     canvas.drawLine(
       Offset(size.width * 0.10, eyeY),
       Offset(size.width * 0.90, eyeY),
@@ -344,10 +191,10 @@ class _CompositionGuidePainter extends CustomPainter {
     final neckY = faceCenter.dy + headHeight * 0.56;
     final shoulderY = neckY + size.height * 0.055;
     final hipY = footY - size.height * 0.25;
-    final shoulderHalf = size.width * 0.18;
-    final waistHalf = size.width * 0.105;
-    final hipHalf = size.width * 0.135;
-    final handY = size.height * 0.68;
+    final shoulderHalf = size.width * 0.145;
+    final waistHalf = size.width * 0.088;
+    final hipHalf = size.width * 0.125;
+    final handY = size.height * 0.66;
     final kneeY = footY - size.height * 0.13;
 
     final headRect = Rect.fromCenter(
@@ -379,22 +226,22 @@ class _CompositionGuidePainter extends CustomPainter {
     canvas.drawPath(shoulders, outline);
 
     final body = Path()
-      ..moveTo(centerX - shoulderHalf * 0.78, shoulderY + size.height * 0.025)
+      ..moveTo(centerX - shoulderHalf * 0.74, shoulderY + size.height * 0.025)
       ..cubicTo(
-        centerX - waistHalf * 1.15,
-        size.height * 0.52,
-        centerX - hipHalf,
+        centerX - waistHalf * 1.18,
+        size.height * 0.50,
+        centerX - hipHalf * 0.96,
         hipY - size.height * 0.045,
-        centerX - hipHalf,
+        centerX - hipHalf * 0.92,
         hipY,
       )
-      ..lineTo(centerX + hipHalf, hipY)
+      ..lineTo(centerX + hipHalf * 0.92, hipY)
       ..cubicTo(
-        centerX + hipHalf,
+        centerX + hipHalf * 0.96,
         hipY - size.height * 0.045,
-        centerX + waistHalf * 1.15,
-        size.height * 0.52,
-        centerX + shoulderHalf * 0.78,
+        centerX + waistHalf * 1.18,
+        size.height * 0.50,
+        centerX + shoulderHalf * 0.74,
         shoulderY + size.height * 0.025,
       );
     canvas.drawPath(body, outline);
@@ -402,10 +249,10 @@ class _CompositionGuidePainter extends CustomPainter {
     for (final side in [-1.0, 1.0]) {
       final shoulder = Offset(centerX + side * shoulderHalf, shoulderY);
       final elbow = Offset(
-        centerX + side * size.width * 0.21,
+        centerX + side * size.width * 0.17,
         size.height * 0.52,
       );
-      final hand = Offset(centerX + side * size.width * 0.17, handY);
+      final hand = Offset(centerX + side * size.width * 0.135, handY);
       final arm = Path()
         ..moveTo(shoulder.dx, shoulder.dy)
         ..quadraticBezierTo(elbow.dx, elbow.dy, hand.dx, hand.dy);
@@ -413,8 +260,8 @@ class _CompositionGuidePainter extends CustomPainter {
       canvas.drawCircle(hand, size.width * 0.014, _fillPaint(alpha: 0.28));
 
       final hip = Offset(centerX + side * hipHalf * 0.48, hipY);
-      final knee = Offset(centerX + side * size.width * 0.075, kneeY);
-      final foot = Offset(centerX + side * size.width * 0.105, footY);
+      final knee = Offset(centerX + side * size.width * 0.058, kneeY);
+      final foot = Offset(centerX + side * size.width * 0.088, footY);
       final leg = Path()
         ..moveTo(hip.dx, hip.dy)
         ..quadraticBezierTo(knee.dx, knee.dy, foot.dx, foot.dy);
@@ -440,8 +287,8 @@ class _CompositionGuidePainter extends CustomPainter {
     final neckY = faceCenter.dy + headHeight * 0.56;
     final shoulderY = neckY + size.height * 0.060;
     final torsoBottomY = size.height * 0.73;
-    final shoulderHalf = size.width * 0.27;
-    final waistHalf = size.width * 0.16;
+    final shoulderHalf = size.width * 0.225;
+    final waistHalf = size.width * 0.135;
 
     final headRect = Rect.fromCenter(
       center: faceCenter,
@@ -470,20 +317,20 @@ class _CompositionGuidePainter extends CustomPainter {
         shoulderY,
       )
       ..cubicTo(
-        centerX + waistHalf * 1.20,
+        centerX + waistHalf * 1.05,
         size.height * 0.56,
-        centerX + waistHalf,
+        centerX + waistHalf * 0.92,
         torsoBottomY,
-        centerX + waistHalf * 0.72,
+        centerX + waistHalf * 0.66,
         torsoBottomY,
       )
       ..moveTo(centerX - shoulderHalf, shoulderY)
       ..cubicTo(
-        centerX - waistHalf * 1.20,
+        centerX - waistHalf * 1.05,
         size.height * 0.56,
-        centerX - waistHalf,
+        centerX - waistHalf * 0.92,
         torsoBottomY,
-        centerX - waistHalf * 0.72,
+        centerX - waistHalf * 0.66,
         torsoBottomY,
       );
     canvas.drawPath(upperBody, outline);
@@ -491,11 +338,11 @@ class _CompositionGuidePainter extends CustomPainter {
     for (final side in [-1.0, 1.0]) {
       final shoulder = Offset(centerX + side * shoulderHalf, shoulderY);
       final elbow = Offset(
-        centerX + side * size.width * 0.30,
+        centerX + side * size.width * 0.245,
         size.height * 0.57,
       );
       final hand = Offset(
-        centerX + side * size.width * 0.21,
+        centerX + side * size.width * 0.170,
         size.height * 0.71,
       );
       final arm = Path()
@@ -671,13 +518,7 @@ class _CompositionGuidePainter extends CustomPainter {
     canvas.drawLine(noseTop, noseTip, softPaint);
     canvas.drawLine(noseTop, noseTip, featurePaint);
     canvas.drawLine(noseLeft, noseRight, featurePaint);
-    canvas.drawArc(
-      mouthRect,
-      math.pi * 0.10,
-      math.pi * 0.80,
-      false,
-      softPaint,
-    );
+    canvas.drawArc(mouthRect, math.pi * 0.10, math.pi * 0.80, false, softPaint);
     canvas.drawArc(
       mouthRect,
       math.pi * 0.10,
@@ -740,9 +581,9 @@ class _CompositionGuidePainter extends CustomPainter {
     final neckY = faceCenter.dy + headHeight * 0.56;
     final shoulderY = neckY + size.height * 0.050;
     final hipY = footY - size.height * 0.22;
-    final shoulderHalf = size.width * 0.145;
-    final waistHalf = size.width * 0.082;
-    final hipHalf = size.width * 0.105;
+    final shoulderHalf = size.width * 0.118;
+    final waistHalf = size.width * 0.070;
+    final hipHalf = size.width * 0.095;
     final centerX = faceCenter.dx + lean * size.width * 0.012;
 
     final headRect = Rect.fromCenter(
@@ -756,34 +597,34 @@ class _CompositionGuidePainter extends CustomPainter {
     final body = Path()
       ..moveTo(centerX - shoulderHalf, shoulderY)
       ..cubicTo(
-        centerX - shoulderHalf * 0.56,
+        centerX - shoulderHalf * 0.60,
         shoulderY - size.height * 0.030,
-        faceCenter.dx - size.width * 0.035,
+        faceCenter.dx - size.width * 0.030,
         neckY,
         faceCenter.dx,
         neckY,
       )
       ..cubicTo(
-        faceCenter.dx + size.width * 0.035,
+        faceCenter.dx + size.width * 0.030,
         neckY,
-        centerX + shoulderHalf * 0.56,
+        centerX + shoulderHalf * 0.60,
         shoulderY - size.height * 0.030,
         centerX + shoulderHalf,
         shoulderY,
       )
       ..cubicTo(
-        centerX + waistHalf * 1.25,
+        centerX + waistHalf * 1.10,
         size.height * 0.55,
-        centerX + hipHalf,
+        centerX + hipHalf * 0.92,
         hipY,
-        centerX + hipHalf,
+        centerX + hipHalf * 0.88,
         hipY,
       )
-      ..lineTo(centerX - hipHalf, hipY)
+      ..lineTo(centerX - hipHalf * 0.88, hipY)
       ..cubicTo(
-        centerX - hipHalf,
+        centerX - hipHalf * 0.92,
         hipY,
-        centerX - waistHalf * 1.25,
+        centerX - waistHalf * 1.10,
         size.height * 0.55,
         centerX - shoulderHalf,
         shoulderY,
@@ -797,7 +638,7 @@ class _CompositionGuidePainter extends CustomPainter {
         size.height * 0.64,
       );
       final elbow = Offset(
-        centerX + side * size.width * 0.160,
+        centerX + side * size.width * 0.132,
         size.height * 0.51,
       );
       final arm = Path()
@@ -809,7 +650,7 @@ class _CompositionGuidePainter extends CustomPainter {
 
     for (final side in [-1.0, 1.0]) {
       final hip = Offset(centerX + side * hipHalf * 0.42, hipY);
-      final foot = Offset(centerX + side * size.width * 0.078, footY);
+      final foot = Offset(centerX + side * size.width * 0.064, footY);
       canvas.drawLine(hip, foot, outline);
     }
   }
@@ -1044,18 +885,12 @@ class _CompositionGuidePainter extends CustomPainter {
     canvas.drawLine(arrowStart, arrowEnd, paint);
     canvas.drawLine(
       arrowEnd,
-      arrowEnd.translate(
-        -direction * size.width * 0.035,
-        -size.height * 0.020,
-      ),
+      arrowEnd.translate(-direction * size.width * 0.035, -size.height * 0.020),
       paint,
     );
     canvas.drawLine(
       arrowEnd,
-      arrowEnd.translate(
-        -direction * size.width * 0.035,
-        size.height * 0.020,
-      ),
+      arrowEnd.translate(-direction * size.width * 0.035, size.height * 0.020),
       paint,
     );
   }

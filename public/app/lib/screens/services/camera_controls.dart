@@ -25,18 +25,18 @@ extension _CameraControls on _CameraScreenState {
     _flashMode = mode;
     unawaited(_saveSetting('flashMode', mode.name));
     await _NativeCameraBridge.setFlash(mode);
-    if (mounted) setState(() => _flashMenuOpen = false);
+    if (mounted) setState(() => _ui.flashMenuOpen = false);
   }
 
   Future<void> _setResolution(ResolutionPreset preset) async {
     if (_isCameraSuspended || _isCameraOperationInFlight) return;
     if (_resolutionPreset == preset) {
-      setState(() => _settingsMenuOpen = false);
+      setState(() => _ui.settingsMenuOpen = false);
       return;
     }
     setState(() {
       _resolutionPreset = preset;
-      _settingsMenuOpen = false;
+      _ui.settingsMenuOpen = false;
       _status = 'Camera loading';
     });
     unawaited(_saveSetting('resolutionPreset', preset.name));
@@ -59,14 +59,21 @@ extension _CameraControls on _CameraScreenState {
 
   Future<void> _setZoom(double value) async {
     if (_isCameraSuspended || _isCameraOperationInFlight) return;
-    final next = value <= 0.55 ? 0.5 : value.clamp(1, 10).toDouble();
-    if (next == 0.5 &&
+    final keepCurrentLens = _isFrontCamera || _shotMode == ShotMode.selfie;
+    final next = keepCurrentLens
+        ? value.clamp(1, 10).toDouble()
+        : value <= 0.55
+        ? 0.5
+        : value.clamp(1, 10).toDouble();
+    if (!keepCurrentLens &&
+        next == 0.5 &&
         _nativeWideSensorId != null &&
         _nativeSelectedSensorId != _nativeWideSensorId) {
       _nativeSelectedSensorId = _nativeWideSensorId;
       await _NativeCameraBridge.setSensor(_nativeWideSensorId!);
       await Future<void>.delayed(const Duration(milliseconds: 180));
-    } else if (next >= 0.95 &&
+    } else if (!keepCurrentLens &&
+        next >= 0.95 &&
         _nativeStandardSensorId != null &&
         _nativeSelectedSensorId == _nativeWideSensorId) {
       _nativeSelectedSensorId = _nativeStandardSensorId;
@@ -95,14 +102,14 @@ extension _CameraControls on _CameraScreenState {
     _exposureGestureTimer?.cancel();
     setState(() {
       _exposure = next.toDouble();
-      _showExposureGesture = true;
+      _ui.showExposureGesture = true;
       _status = _exposure >= 0
           ? 'Exposure +${_exposure.toStringAsFixed(1)}'
           : 'Exposure ${_exposure.toStringAsFixed(1)}';
     });
     unawaited(_NativeCameraBridge.setExposure(_exposure));
     _exposureGestureTimer = Timer(const Duration(milliseconds: 850), () {
-      if (mounted) setState(() => _showExposureGesture = false);
+      if (mounted) setState(() => _ui.showExposureGesture = false);
     });
   }
 
@@ -131,10 +138,14 @@ extension _CameraControls on _CameraScreenState {
   }
 
   Future<void> _cycleZoom() async {
-    await _setZoom(_zoomModel.nextPreset(hasWideLens: _hasWideBackCamera));
+    await _setZoom(
+      _zoomModel.nextPreset(hasWideLens: _hasWideBackCamera && !_isFrontCamera),
+    );
   }
 
   bool get _hasWideBackCamera => _nativeWideSensorId != null;
+
+  bool get _isFrontCamera => _nativeState.lensFacing == 'front';
 
   _NativeCameraSensor? get _activeNativeSensor {
     for (final sensor in _nativeSensors) {
@@ -164,14 +175,16 @@ extension _CameraControls on _CameraScreenState {
   }
 
   void _toggleAutoCapture() {
-    if (_shotMode == ShotMode.selfie) {
+    if (!ShotModePolicy.canAutoCapture(_shotMode)) {
       setState(() {
+        _autoCaptureController.reset();
         _autoCaptureEnabled = false;
         _status = 'Selfie uses face guide';
       });
       return;
     }
     setState(() {
+      _autoCaptureController.reset();
       _autoCaptureEnabled = !_autoCaptureEnabled;
       _status = _autoCaptureEnabled ? 'AUTO ON' : 'AUTO OFF';
     });
@@ -225,32 +238,29 @@ extension _CameraControls on _CameraScreenState {
   }
 
   Future<void> _applyAnalysisModeForShotMode(ShotMode mode) async {
-    final analysisMode = switch (mode) {
-      ShotMode.selfie => 'face_only',
-      ShotMode.stillLife || ShotMode.object => 'object_only',
-      _ => 'full',
-    };
-    await _NativeCameraBridge.setAnalysisMode(analysisMode);
+    await _NativeCameraBridge.setAnalysisMode(
+      ShotModePolicy.nativeAnalysisModeFor(mode),
+    );
   }
 
   void _toggleGuides() {
-    setState(() => _showGuides = !_showGuides);
-    unawaited(_saveSetting('showGuides', _showGuides));
+    setState(() => _ui.showGuides = !_ui.showGuides);
+    unawaited(_saveSetting('showGuides', _ui.showGuides));
   }
 
   void _toggleGrid() {
-    setState(() => _showGrid = !_showGrid);
-    unawaited(_saveSetting('showGrid', _showGrid));
+    setState(() => _ui.showGrid = !_ui.showGrid);
+    unawaited(_saveSetting('showGrid', _ui.showGrid));
   }
 
   void _toggleScore() {
-    setState(() => _showScore = !_showScore);
-    unawaited(_saveSetting('showScore', _showScore));
+    setState(() => _ui.showScore = !_ui.showScore);
+    unawaited(_saveSetting('showScore', _ui.showScore));
   }
 
   void _toggleVisionDebug() {
-    setState(() => _showVisionDebug = !_showVisionDebug);
-    unawaited(_saveSetting('showVisionDebug', _showVisionDebug));
+    setState(() => _ui.showVisionDebug = !_ui.showVisionDebug);
+    unawaited(_saveSetting('showVisionDebug', _ui.showVisionDebug));
   }
 
   Future<void> _focusAt(TapDownDetails details, BuildContext context) async {
@@ -267,11 +277,11 @@ extension _CameraControls on _CameraScreenState {
     }
     _focusTimer?.cancel();
     setState(() {
-      _focusPoint = details.localPosition;
+      _ui.focusPoint = details.localPosition;
       _status = 'Focus set';
     });
     _focusTimer = Timer(const Duration(milliseconds: 900), () {
-      if (mounted) setState(() => _focusPoint = null);
+      if (mounted) setState(() => _ui.focusPoint = null);
     });
   }
 
@@ -362,17 +372,13 @@ extension _CameraControls on _CameraScreenState {
   void _toggleTopMenu(String menu) {
     setState(() {
       _toolPanel = ToolPanel.none;
-      _flashMenuOpen = menu == 'flash' ? !_flashMenuOpen : false;
-      _aspectMenuOpen = menu == 'aspect' ? !_aspectMenuOpen : false;
-      _settingsMenuOpen = menu == 'settings' ? !_settingsMenuOpen : false;
+      _ui.toggleTopMenu(menu);
     });
   }
 
   void _toggleToolPanel(ToolPanel panel) {
     setState(() {
-      _flashMenuOpen = false;
-      _aspectMenuOpen = false;
-      _settingsMenuOpen = false;
+      _ui.closeMenus();
       _toolPanel = _toolPanel == panel ? ToolPanel.none : panel;
     });
   }

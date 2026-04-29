@@ -24,15 +24,38 @@ void main() {
     expect(result.score, greaterThanOrEqualTo(rules.autoCaptureThreshold));
   });
 
-  test('composition cue tells user to move when subject is off frame', () {
+  test(
+    'people cue tells user to move the camera when subject is off frame',
+    () {
+      final rules = compositionRules[ShotMode.portrait]!;
+      final result = scoreComposition(
+        SubjectEstimate(
+          bodyCenterX: rules.bodyCenterX + 0.20,
+          faceCenterY: rules.faceCenterY,
+          eyeLineY: rules.eyeLineY,
+          footLineY: rules.footLineY,
+          horizonTiltDeg: 0,
+          limbsInsideFrame: true,
+          subjectConfidence: 0.90,
+          poseConfidence: 0.90,
+        ),
+        rules,
+      );
+
+      expect(result.ready, isFalse);
+      expect(result.cue, '카메라를 오른쪽으로 옮겨요');
+    },
+  );
+
+  test('landscape cue prioritizes leveling the camera angle', () {
     final rules = compositionRules[ShotMode.landscape]!;
     final result = scoreComposition(
       SubjectEstimate(
         bodyCenterX: rules.bodyCenterX + 0.20,
-        faceCenterY: rules.faceCenterY,
+        faceCenterY: rules.faceCenterY + 0.10,
         eyeLineY: rules.eyeLineY,
         footLineY: rules.footLineY,
-        horizonTiltDeg: 0,
+        horizonTiltDeg: 4,
         limbsInsideFrame: true,
         subjectConfidence: 0.90,
         poseConfidence: 0.90,
@@ -41,7 +64,7 @@ void main() {
     );
 
     expect(result.ready, isFalse);
-    expect(result.cue, '왼쪽으로');
+    expect(result.cue, '카메라 각도를 바로 세워요');
   });
 
   test('teacher weights make landscape more sensitive to tilted horizons', () {

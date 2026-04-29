@@ -28,12 +28,14 @@ extension _CaptureActions on _CameraScreenState {
       );
       try {
         _lastShotAt = DateTime.now();
+        final captureComposition = _currentCompositionSession();
         final capturedPath = await _NativeCameraBridge.takePhoto();
         if (capturedPath == null || capturedPath.isEmpty) {
           throw StateError('Capture failed');
         }
         final savedPath = await _composeEditedPhoto(capturedPath);
         final galleryPath = await _capturePipeline.saveImage(savedPath);
+        unawaited(_recordSavedShot(galleryPath, captureComposition));
         _showTemporaryThumbnail(galleryPath);
         setState(
           () => _setSession(_CameraSessionPhase.photoReady, message: 'Saved'),
@@ -157,49 +159,76 @@ extension _CaptureActions on _CameraScreenState {
   }
 
   void _maybeAutoCapture() {
-    if (!_autoCaptureEnabled ||
-        !_aiEnabled ||
-        _mediaMode != MediaMode.photo ||
-        _isBusy ||
-        _isCameraSuspended) {
-      return;
-    }
     final now = DateTime.now();
-    final lastAutoCheckAt = _lastAutoCheckAt;
-    if (lastAutoCheckAt != null &&
-        now.difference(lastAutoCheckAt).inMilliseconds < 1000) {
-      return;
-    }
-    _lastAutoCheckAt = now;
-    final rules = _rules[_shotMode]!;
-    final estimate =
-        _estimateForShotMode(
-          transformVisionForViewport(_visionResult, _previewAspectRatio()),
-        ) ??
-        makePreviewEstimate(_tick);
-    if (!_analysisPipeline.isReliable(estimate)) return;
-    final result = scoreComposition(estimate, rules);
-    if (!result.ready) return;
-    final lastShotAt = _lastShotAt;
-    if (lastShotAt != null &&
-        now.difference(lastShotAt).inMilliseconds < 4500) {
-      return;
-    }
+    final viewportVisionResult = transformVisionForViewport(
+      _visionResult,
+      _previewAspectRatio(),
+    );
+    final composition = _currentCompositionSession();
+    final decision = _autoCaptureController.evaluate(
+      now: now,
+      enabled: _autoCaptureEnabled,
+      aiEnabled: _aiEnabled,
+      canAutoCaptureMode: ShotModePolicy.canAutoCapture(_shotMode),
+      isPhotoMode: _mediaMode == MediaMode.photo,
+      isBusy: _isBusy,
+      isCameraSuspended: _isCameraSuspended,
+      hasReliableSubject: composition.hasReliableEstimate,
+      compositionReady: composition.ready,
+      eyesOpen: _eyesOpenForAutoCapture(viewportVisionResult),
+      subjectX: composition.estimate.bodyCenterX,
+      subjectY: composition.estimate.faceCenterY,
+      lastShotAt: _lastShotAt,
+    );
+    if (decision != AutoCaptureDecision.capture) return;
     _capturePhotoNow();
+  }
+
+  CompositionSession _currentCompositionSession() {
+    final estimate = _estimateForShotMode(
+      transformVisionForViewport(_visionResult, _previewAspectRatio()),
+    );
+    return _composition.evaluate(
+      mode: _shotMode,
+      liveEstimate: estimate,
+      hasReliableEstimate: _analysisPipeline.isReliable(estimate),
+    );
+  }
+
+  bool _eyesOpenForAutoCapture(VisionFrameResult? result) {
+    final facesWithEyeState = (result?.faces ?? const <DetectedFace>[])
+        .where((face) => face.hasEyeOpenProbabilities)
+        .toList(growable: false);
+    if (facesWithEyeState.isEmpty) return true;
+    return facesWithEyeState.every((face) => face.eyesLikelyOpen);
+  }
+
+  Future<void> _recordSavedShot(
+    String path,
+    CompositionSession composition,
+  ) async {
+    final capturedAt = _lastShotAt ?? DateTime.now();
+    await _shotHistoryStore.add(
+      SavedShotRecord(
+        id: '${capturedAt.microsecondsSinceEpoch}_${_shotMode.name}',
+        path: path,
+        shotMode: _shotMode,
+        capturedAt: capturedAt,
+        compositionScore: composition.result?.score,
+        compositionCue: composition.cue,
+        hadReliableEstimate: composition.hasReliableEstimate,
+      ),
+    );
   }
 
   void _showTemporaryThumbnail(String path, {bool isVideo = false}) {
     _thumbnailTimer?.cancel();
     setState(() {
-      _thumbnailPath = path;
-      _thumbnailIsVideo = isVideo;
+      _ui.showThumbnail(path, isVideo: isVideo);
     });
     _thumbnailTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) {
-        setState(() {
-          _thumbnailPath = null;
-          _thumbnailIsVideo = false;
-        });
+        setState(_ui.clearThumbnail);
       }
     });
   }

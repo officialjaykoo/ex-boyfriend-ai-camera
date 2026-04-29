@@ -44,7 +44,8 @@ class NativeVisionAnalyzer(private val context: Context) {
     ): Map<String, Any> {
         val started = System.currentTimeMillis()
         analysisCount += 1
-        if (mode == "face_only") {
+        val analysisMode = NativeAnalysisMode.from(mode)
+        if (analysisMode.isFaceOnly) {
             val rawFaces = runFaceDetection(image)
             val faces = if (mirrorHorizontal) mirrorFaces(rawFaces) else rawFaces
             val processingMs = (System.currentTimeMillis() - started).toInt()
@@ -55,7 +56,7 @@ class NativeVisionAnalyzer(private val context: Context) {
                 )
             }
             return mapOf(
-                "type" to "face_only",
+                "type" to analysisMode.wireValue,
                 "objects" to emptyList<Map<String, Any>>(),
                 "pose" to emptyList<Map<String, Any>>(),
                 "faces" to faces,
@@ -66,13 +67,13 @@ class NativeVisionAnalyzer(private val context: Context) {
                 "mirrored" to mirrorHorizontal,
             )
         }
-        val shouldRunYolo = mode == "object_only" || analysisCount == 1 || analysisCount % 3 == 0
+        val shouldRunYolo = analysisMode.isObjectOnly || analysisCount == 1 || analysisCount % 3 == 0
         val rawObjects = if (shouldRunYolo) {
             runYolo(image).also { lastObjects = it }
         } else {
             lastObjects
         }
-        val rawPose = if (mode == "object_only") {
+        val rawPose = if (analysisMode.isObjectOnly) {
             emptyList()
         } else {
             runMoveNet(image)
@@ -83,11 +84,11 @@ class NativeVisionAnalyzer(private val context: Context) {
         if (analysisCount <= 3 || analysisCount % 10 == 0) {
             Log.d(
                 "NativeVision",
-                "analysis=$analysisCount mode=$mode objects=${objects.size} pose=${pose.size} ms=$processingMs",
+                "analysis=$analysisCount mode=${analysisMode.wireValue} objects=${objects.size} pose=${pose.size} ms=$processingMs",
             )
         }
         return mapOf(
-            "type" to mode,
+            "type" to analysisMode.wireValue,
             "objects" to objects,
             "pose" to pose,
             "faces" to emptyList<Map<String, Any>>(),
@@ -225,7 +226,7 @@ class NativeVisionAnalyzer(private val context: Context) {
             FaceDetectorOptions.Builder()
                 .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
                 .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
-                .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
+                .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
                 .setMinFaceSize(0.12f)
                 .enableTracking()
                 .build(),
@@ -278,6 +279,8 @@ class NativeVisionAnalyzer(private val context: Context) {
             "height" to (box.height() / normalizedHeight).toDouble().coerceIn(0.0, 1.0),
             "headEulerY" to headEulerAngleY.toDouble(),
             "headEulerZ" to headEulerAngleZ.toDouble(),
+            "leftEyeOpenProbability" to (leftEyeOpenProbability?.toDouble() ?: -1.0),
+            "rightEyeOpenProbability" to (rightEyeOpenProbability?.toDouble() ?: -1.0),
             "landmarks" to landmarks,
         )
     }

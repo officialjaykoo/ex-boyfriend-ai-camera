@@ -18,6 +18,7 @@ extension _CameraSettingsStore on _CameraScreenState {
         prefs.getString('${_CameraScreenState._settingsPrefix}shotMode'),
         _shotMode,
       );
+      _shotMode = ShotModePolicy.normalizeVisibleMode(_shotMode);
       _flashMode = _enumByName(
         FlashMode.values,
         prefs.getString('${_CameraScreenState._settingsPrefix}flashMode'),
@@ -37,20 +38,20 @@ extension _CameraSettingsStore on _CameraScreenState {
         ),
         _imageOutputFormat,
       );
-      _showGrid =
+      _ui.showGrid =
           prefs.getBool('${_CameraScreenState._settingsPrefix}showGrid') ??
-          _showGrid;
-      _showGuides =
+          _ui.showGrid;
+      _ui.showGuides =
           prefs.getBool('${_CameraScreenState._settingsPrefix}showGuides') ??
-          _showGuides;
-      _showScore =
+          _ui.showGuides;
+      _ui.showScore =
           prefs.getBool('${_CameraScreenState._settingsPrefix}showScore') ??
-          _showScore;
-      _showVisionDebug =
+          _ui.showScore;
+      _ui.showVisionDebug =
           prefs.getBool(
             '${_CameraScreenState._settingsPrefix}showVisionDebug',
           ) ??
-          _showVisionDebug;
+          _ui.showVisionDebug;
       _imageQuality =
           prefs.getInt('${_CameraScreenState._settingsPrefix}imageQuality') ??
           _imageQuality;

@@ -110,6 +110,8 @@ class DetectedFace {
     this.nose,
     this.headEulerY = 0,
     this.headEulerZ = 0,
+    this.leftEyeOpenProbability,
+    this.rightEyeOpenProbability,
   });
 
   final double confidence;
@@ -122,6 +124,8 @@ class DetectedFace {
   final Offset? nose;
   final double headEulerY;
   final double headEulerZ;
+  final double? leftEyeOpenProbability;
+  final double? rightEyeOpenProbability;
 
   factory DetectedFace.fromMap(Map<dynamic, dynamic> map) {
     final landmarks = map['landmarks'] is Map<dynamic, dynamic>
@@ -138,6 +142,12 @@ class DetectedFace {
       nose: _offsetFromLandmark(landmarks['nose']),
       headEulerY: (map['headEulerY'] as num?)?.toDouble() ?? 0,
       headEulerZ: (map['headEulerZ'] as num?)?.toDouble() ?? 0,
+      leftEyeOpenProbability: _optionalProbability(
+        map['leftEyeOpenProbability'],
+      ),
+      rightEyeOpenProbability: _optionalProbability(
+        map['rightEyeOpenProbability'],
+      ),
     );
   }
 
@@ -161,8 +171,28 @@ class DetectedFace {
       nose: nose ?? this.nose,
       headEulerY: headEulerY,
       headEulerZ: headEulerZ,
+      leftEyeOpenProbability: leftEyeOpenProbability,
+      rightEyeOpenProbability: rightEyeOpenProbability,
     );
   }
+
+  bool get hasEyeOpenProbabilities =>
+      leftEyeOpenProbability != null || rightEyeOpenProbability != null;
+
+  bool get eyesLikelyOpen {
+    final probabilities = [
+      leftEyeOpenProbability,
+      rightEyeOpenProbability,
+    ].whereType<double>().toList(growable: false);
+    if (probabilities.isEmpty) return true;
+    return probabilities.every((value) => value >= 0.45);
+  }
+}
+
+double? _optionalProbability(dynamic value) {
+  final probability = (value as num?)?.toDouble();
+  if (probability == null || probability < 0) return null;
+  return probability.clamp(0, 1).toDouble();
 }
 
 Offset? _offsetFromLandmark(dynamic value) {

@@ -218,7 +218,11 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.04,
       'detectionConfidence': 0.18,
     },
-    captureAdvice: ['카메라 각도를 바로 세워요', '지평선을 위아래 1/3에 맞춰요', '길이나 선이 안쪽으로 이어지게 해요'],
+    captureAdvice: [
+      '카메라 각도를 바로 세워요',
+      '지평선을 위아래 1/3에 맞춰요',
+      '길이나 선이 안쪽으로 이어지게 해요',
+    ],
   ),
   ShotMode.stillLife: CompositionRuleSet(
     guideType: 'subject_thirds',
@@ -258,7 +262,11 @@ const Map<ShotMode, CompositionRuleSet> compositionRules = {
       'limbSafety': 0.00,
       'detectionConfidence': 0.20,
     },
-    captureAdvice: ['사물이 프레임을 더 채우게 해요', '배경 여백을 깨끗하게 비워요', '정면이나 45도로 각도를 정리해요'],
+    captureAdvice: [
+      '사물이 프레임을 더 채우게 해요',
+      '배경 여백을 깨끗하게 비워요',
+      '정면이나 45도로 각도를 정리해요',
+    ],
   ),
   ShotMode.candid: CompositionRuleSet(
     guideType: 'candid_people',

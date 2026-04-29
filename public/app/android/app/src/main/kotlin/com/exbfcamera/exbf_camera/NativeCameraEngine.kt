@@ -268,11 +268,7 @@ object NativeCameraEngine {
     }
 
     fun setAnalysisMode(mode: String?) {
-        analysisMode = when (mode) {
-            "face_only" -> "face_only"
-            "object_only" -> "object_only"
-            else -> "full"
-        }
+        analysisMode = NativeAnalysisMode.from(mode).wireValue
         analysisBusy = false
     }
 

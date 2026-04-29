@@ -12,6 +12,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../engine/composition_engine.dart';
 import '../engine/vision_composition_adapter.dart';
 import '../models/camera_modes.dart';
+import '../product/auto_capture_controller.dart';
+import '../product/composition_session.dart';
+import '../product/saved_shot_history.dart';
+import '../product/shot_mode_policy.dart';
 import '../rules/composition_rules.dart';
 import '../vision/vision_engine.dart';
 import '../vision/vision_models.dart';
@@ -19,10 +23,19 @@ import '../vision/vision_models.dart';
 part 'widgets/bottom_controls.dart';
 part 'widgets/camera_overlays.dart';
 part 'widgets/composition_guides.dart';
+part 'widgets/guide_debug_overlays.dart';
 part 'widgets/settings_overlay.dart';
+part 'widgets/settings_diagnostics.dart';
 part 'widgets/sticker_effects.dart';
+part 'widgets/photo_effect_processor.dart';
 part 'widgets/tool_selection_overlay.dart';
 part 'widgets/top_bar.dart';
+part 'controllers/ui_overlay_controller.dart';
+part 'controllers/settings_controller.dart';
+part 'controllers/vision_controller.dart';
+part 'controllers/camera_session_controller.dart';
+part 'controllers/capture_controller.dart';
+part 'controllers/composition_controller.dart';
 part 'services/camera_controls.dart';
 part 'services/camera_lifecycle.dart';
 part 'services/native_camera_bridge.dart';
@@ -54,57 +67,66 @@ class _CameraScreenState extends State<CameraScreen>
   };
 
   String _status = 'Camera ready';
-  String _aspectLabel = '3:4';
   ShotMode _shotMode = ShotMode.portrait;
   ToolPanel _toolPanel = ToolPanel.none;
   StickerEffect _stickerEffect = StickerEffect.none;
   StyleEffect _styleEffect = StyleEffect.none;
   SetEffect _setEffect = SetEffect.none;
   RetouchEffect _retouchEffect = RetouchEffect.none;
-  ImageOutputFormat _imageOutputFormat = ImageOutputFormat.jpg;
   MediaMode _mediaMode = MediaMode.photo;
-  Map<ShotMode, CompositionRuleSet> _rules = compositionRules;
+  final _CompositionController _composition = _CompositionController();
   FlashMode _flashMode = FlashMode.off;
   bool _autoCaptureEnabled = false;
-  bool _showGrid = false;
-  bool _showGuides = true;
-  bool _showScore = true;
-  bool _showVisionDebug = false;
-  bool _aspectMenuOpen = false;
-  bool _flashMenuOpen = false;
-  bool _settingsMenuOpen = false;
-  ResolutionPreset _resolutionPreset = ResolutionPreset.veryHigh;
-  bool _isRecording = false;
-  bool _isBusy = false;
-  bool _isCameraSuspended = false;
-  bool _isCameraOperationInFlight = false;
-  _CameraSessionState _session = const _CameraSessionState(
-    _CameraSessionPhase.preparing,
-    message: 'Camera ready',
-  );
-  int _imageQuality = 95;
-  int _videoFps = 30;
-  int _videoBitrate = 10000000;
-  bool _videoAudioEnabled = true;
-  Duration _captureTimer = Duration.zero;
-  int? _countdownSeconds;
-  Offset? _focusPoint;
-  bool _showExposureGesture = false;
+  final _UiOverlayController _ui = _UiOverlayController();
+  final _CameraSessionController _cameraSession = _CameraSessionController();
+  bool get _isRecording => _cameraSession.isRecording;
+  bool get _isBusy => _cameraSession.isBusy;
+  bool get _isCameraSuspended => _cameraSession.isSuspended;
+  bool get _isCameraOperationInFlight => _cameraSession.cameraOperationInFlight;
+  set _isCameraOperationInFlight(bool value) =>
+      _cameraSession.cameraOperationInFlight = value;
+  _CameraSessionState get _session => _cameraSession.state;
+  final _SettingsController _settings = _SettingsController();
+  String get _aspectLabel => _settings.aspectLabel;
+  set _aspectLabel(String value) => _settings.aspectLabel = value;
+  ImageOutputFormat get _imageOutputFormat => _settings.imageOutputFormat;
+  set _imageOutputFormat(ImageOutputFormat value) =>
+      _settings.imageOutputFormat = value;
+  ResolutionPreset get _resolutionPreset => _settings.resolutionPreset;
+  set _resolutionPreset(ResolutionPreset value) =>
+      _settings.resolutionPreset = value;
+  int get _imageQuality => _settings.imageQuality;
+  set _imageQuality(int value) => _settings.imageQuality = value;
+  int get _videoFps => _settings.videoFps;
+  set _videoFps(int value) => _settings.videoFps = value;
+  int get _videoBitrate => _settings.videoBitrate;
+  set _videoBitrate(int value) => _settings.videoBitrate = value;
+  bool get _videoAudioEnabled => _settings.videoAudioEnabled;
+  set _videoAudioEnabled(bool value) => _settings.videoAudioEnabled = value;
+  Duration get _captureTimer => _settings.captureTimer;
+  set _captureTimer(Duration value) => _settings.captureTimer = value;
+  late final _CaptureController _capture;
+  _CapturePipeline get _capturePipeline => _capture.pipeline;
+  int? get _countdownSeconds => _capture.countdownSeconds;
+  set _countdownSeconds(int? value) => _capture.countdownSeconds = value;
   double _zoom = 1;
   double _zoomAtScaleStart = 1;
   _ZoomModel _zoomModel = const _ZoomModel(min: 1, max: 10, current: 1);
-  final double _minExposure = -3;
-  final double _maxExposure = 3;
-  double _exposure = 0;
-  int? _manualIso;
-  int? _manualShutterNs;
-  String _manualWhiteBalance = 'auto';
-  int _tick = 0;
-  DateTime? _lastShotAt;
-  DateTime? _lastAutoCheckAt;
-  DateTime? _recordingStartedAt;
-  String? _thumbnailPath;
-  bool _thumbnailIsVideo = false;
+  double get _minExposure => _SettingsController.minExposure;
+  double get _maxExposure => _SettingsController.maxExposure;
+  double get _exposure => _settings.exposure;
+  set _exposure(double value) => _settings.exposure = value;
+  int? get _manualIso => _settings.manualIso;
+  set _manualIso(int? value) => _settings.manualIso = value;
+  int? get _manualShutterNs => _settings.manualShutterNs;
+  set _manualShutterNs(int? value) => _settings.manualShutterNs = value;
+  String get _manualWhiteBalance => _settings.manualWhiteBalance;
+  set _manualWhiteBalance(String value) => _settings.manualWhiteBalance = value;
+  DateTime? get _lastShotAt => _capture.lastShotAt;
+  set _lastShotAt(DateTime? value) => _capture.lastShotAt = value;
+  DateTime? get _recordingStartedAt => _capture.recordingStartedAt;
+  set _recordingStartedAt(DateTime? value) =>
+      _capture.recordingStartedAt = value;
   Timer? _tickTimer;
   Timer? _thumbnailTimer;
   Timer? _focusTimer;
@@ -112,48 +134,64 @@ class _CameraScreenState extends State<CameraScreen>
   Timer? _recordingLimitTimer;
   StreamSubscription<dynamic>? _volumeSubscription;
   StreamSubscription<dynamic>? _analysisSubscription;
-  late final _CapturePipeline _capturePipeline;
-  final _AnalysisPipeline _analysisPipeline = _AnalysisPipeline(
-    minFrameGap: const Duration(milliseconds: 240),
-    minSubjectConfidence: 0.25,
-    minPoseConfidence: 0.25,
-  );
-  final VisionEngine _visionEngine = VisionEngine();
-  VisionFrameResult? _visionResult;
-  _DeviceCapability _deviceCapability = const _DeviceCapability.supported();
-  _AiBenchmarkResult _aiBenchmark = const _AiBenchmarkResult.enabled();
-  bool _aiEnabled = true;
-  String _aiBlockedReason = '';
-  List<_NativeCameraSensor> _nativeSensors = [];
-  _NativeCameraState _nativeState = const _NativeCameraState();
-  bool _nativeCameraReady = false;
-  int? _nativeTextureId;
-  String? _nativeStandardSensorId;
-  String? _nativeWideSensorId;
-  String? _nativeSelectedSensorId;
-  int _analysisFramesReceived = 0;
-  DateTime? _lastAnalysisFrameAt;
-  DateTime? _lastNativeStatePollAt;
+  final _VisionController _vision = _VisionController();
+  _AnalysisPipeline get _analysisPipeline => _vision.analysisPipeline;
+  VisionEngine get _visionEngine => _vision.engine;
+  final AutoCaptureController _autoCaptureController = AutoCaptureController();
+  final SavedShotHistoryStore _shotHistoryStore = const SavedShotHistoryStore();
+  VisionFrameResult? get _visionResult => _vision.result;
+  set _visionResult(VisionFrameResult? value) => _vision.result = value;
+  _DeviceCapability get _deviceCapability => _vision.deviceCapability;
+  set _deviceCapability(_DeviceCapability value) =>
+      _vision.deviceCapability = value;
+  _AiBenchmarkResult get _aiBenchmark => _vision.aiBenchmark;
+  set _aiBenchmark(_AiBenchmarkResult value) => _vision.aiBenchmark = value;
+  bool get _aiEnabled => _vision.aiEnabled;
+  set _aiEnabled(bool value) => _vision.aiEnabled = value;
+  String get _aiBlockedReason => _vision.aiBlockedReason;
+  set _aiBlockedReason(String value) => _vision.aiBlockedReason = value;
+  List<_NativeCameraSensor> get _nativeSensors => _cameraSession.nativeSensors;
+  set _nativeSensors(List<_NativeCameraSensor> value) =>
+      _cameraSession.nativeSensors = value;
+  _NativeCameraState get _nativeState => _cameraSession.nativeState;
+  set _nativeState(_NativeCameraState value) =>
+      _cameraSession.nativeState = value;
+  bool get _nativeCameraReady => _cameraSession.nativeCameraReady;
+  set _nativeCameraReady(bool value) =>
+      _cameraSession.nativeCameraReady = value;
+  int? get _nativeTextureId => _cameraSession.nativeTextureId;
+  set _nativeTextureId(int? value) => _cameraSession.nativeTextureId = value;
+  String? get _nativeStandardSensorId => _cameraSession.nativeStandardSensorId;
+  set _nativeStandardSensorId(String? value) =>
+      _cameraSession.nativeStandardSensorId = value;
+  String? get _nativeWideSensorId => _cameraSession.nativeWideSensorId;
+  set _nativeWideSensorId(String? value) =>
+      _cameraSession.nativeWideSensorId = value;
+  String? get _nativeSelectedSensorId => _cameraSession.nativeSelectedSensorId;
+  set _nativeSelectedSensorId(String? value) =>
+      _cameraSession.nativeSelectedSensorId = value;
+  int get _analysisFramesReceived => _vision.analysisFramesReceived;
+  set _analysisFramesReceived(int value) =>
+      _vision.analysisFramesReceived = value;
+  DateTime? get _lastAnalysisFrameAt => _vision.lastAnalysisFrameAt;
+  set _lastAnalysisFrameAt(DateTime? value) =>
+      _vision.lastAnalysisFrameAt = value;
+  DateTime? get _lastNativeStatePollAt => _cameraSession.lastNativeStatePollAt;
+  set _lastNativeStatePollAt(DateTime? value) =>
+      _cameraSession.lastNativeStatePollAt = value;
 
   @override
   void initState() {
     super.initState();
-    _capturePipeline = _CapturePipeline(album: _albumName);
+    _capture = _CaptureController(album: _albumName);
     WidgetsBinding.instance.addObserver(this);
     _restoreSettings().whenComplete(_initialize);
     _loadRules();
     _subscribeVolumeButtons();
-    final started = DateTime.now();
     _tickTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
       if (!mounted) return;
-      if (_visionResult == null) {
-        setState(
-          () => _tick = DateTime.now().difference(started).inMilliseconds,
-        );
-      } else if (_isRecording) {
-        setState(
-          () => _tick = DateTime.now().difference(started).inMilliseconds,
-        );
+      if (_visionResult == null || _isRecording) {
+        setState(() {});
       }
       final now = DateTime.now();
       final lastPoll = _lastNativeStatePollAt;
@@ -175,9 +213,9 @@ class _CameraScreenState extends State<CameraScreen>
     _recordingLimitTimer?.cancel();
     _volumeSubscription?.cancel();
     _analysisSubscription?.cancel();
-    _capturePipeline.dispose();
+    _capture.dispose();
     unawaited(_NativeCameraBridge.stop());
-    _visionEngine.close();
+    _vision.close();
     super.dispose();
   }
 
@@ -192,10 +230,7 @@ class _CameraScreenState extends State<CameraScreen>
   }
 
   void _setSession(_CameraSessionPhase phase, {String? message}) {
-    _session = _session.copyWith(phase: phase, message: message);
-    _isBusy = _session.isBusy;
-    _isRecording = _session.isRecording;
-    _isCameraSuspended = _session.isSuspended;
+    _cameraSession.setPhase(phase, message: message);
     if (message != null) {
       _status = message;
     }
@@ -203,15 +238,17 @@ class _CameraScreenState extends State<CameraScreen>
 
   @override
   Widget build(BuildContext context) {
-    final rules = _rules[_shotMode]!;
+    final rules = _composition.rulesFor(_shotMode);
     final viewportVisionResult = transformVisionForViewport(
       _visionResult,
       _previewAspectRatio(),
     );
-    final estimate =
-        _estimateForShotMode(viewportVisionResult) ??
-        makePreviewEstimate(_tick);
-    final result = scoreComposition(estimate, rules);
+    final liveEstimate = _estimateForShotMode(viewportVisionResult);
+    final composition = _composition.evaluate(
+      mode: _shotMode,
+      liveEstimate: liveEstimate,
+      hasReliableEstimate: _analysisPipeline.isReliable(liveEstimate),
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -228,9 +265,9 @@ class _CameraScreenState extends State<CameraScreen>
                   onFlashTap: () => _toggleTopMenu('flash'),
                   onAspectTap: () => _toggleTopMenu('aspect'),
                   onSettingsTap: () => _toggleTopMenu('settings'),
-                  showGuides: _showGuides,
-                  showGrid: _showGrid,
-                  showScore: _showScore,
+                  showGuides: _ui.showGuides,
+                  showGrid: _ui.showGrid,
+                  showScore: _ui.showScore,
                   onSwitchCamera: _switchCamera,
                 ),
                 Expanded(
@@ -282,24 +319,25 @@ class _CameraScreenState extends State<CameraScreen>
                                     if (_stickerEffect != StickerEffect.none)
                                       _StickerOverlay(
                                         sticker: _stickerEffect,
+                                        mode: _shotMode,
                                         visionResult: viewportVisionResult,
-                                        estimate: estimate,
+                                        estimate: composition.estimate,
                                       ),
-                                    if (_showGrid) const _RuleGrid(),
-                                    if (_aiEnabled && _showGuides)
+                                    if (_ui.showGrid) const _RuleGrid(),
+                                    if (_aiEnabled && _ui.showGuides)
                                       _CompositionGuideOverlay(
                                         mode: _shotMode,
                                         rules: rules,
-                                        estimate: estimate,
+                                        estimate: composition.estimate,
                                         visionResult: viewportVisionResult,
-                                        ready: result.ready,
+                                        ready: composition.ready,
                                       ),
-                                    if (_aiEnabled && _showScore)
+                                    if (_aiEnabled && _ui.showScore)
                                       _ScoreBadge(
-                                        cue: result.cue,
-                                        ready: result.ready,
+                                        cue: composition.cue,
+                                        ready: composition.ready,
                                       ),
-                                    if (_aiEnabled && _showVisionDebug)
+                                    if (_aiEnabled && _ui.showVisionDebug)
                                       _VisionDebugOverlay(
                                         result: viewportVisionResult,
                                       ),
@@ -312,9 +350,9 @@ class _CameraScreenState extends State<CameraScreen>
                                       _RecordingTimerBadge(
                                         startedAt: _recordingStartedAt!,
                                       ),
-                                    if (_focusPoint != null)
-                                      _FocusReticle(point: _focusPoint!),
-                                    if (_showExposureGesture)
+                                    if (_ui.focusPoint != null)
+                                      _FocusReticle(point: _ui.focusPoint!),
+                                    if (_ui.showExposureGesture)
                                       _ExposureGestureBadge(
                                         exposure: _exposure,
                                       ),
@@ -332,21 +370,18 @@ class _CameraScreenState extends State<CameraScreen>
                                         onTap: _cycleZoom,
                                       ),
                                     ),
-                                    if (_thumbnailPath != null)
+                                    if (_ui.thumbnailPath != null)
                                       Positioned(
                                         left: 18,
                                         bottom: 18,
                                         child: _ShotThumbnail(
-                                          path: _thumbnailPath!,
+                                          path: _ui.thumbnailPath!,
                                           onTap: () async {
                                             _thumbnailTimer?.cancel();
-                                            setState(() {
-                                              _thumbnailPath = null;
-                                              _thumbnailIsVideo = false;
-                                            });
+                                            setState(_ui.clearThumbnail);
                                             await _openGallery();
                                           },
-                                          isVideo: _thumbnailIsVideo,
+                                          isVideo: _ui.thumbnailIsVideo,
                                         ),
                                       ),
                                   ],
@@ -363,15 +398,17 @@ class _CameraScreenState extends State<CameraScreen>
                   isRecording: _isRecording,
                   isBusy: _isBusy,
                   onShotModeChanged: (mode) {
+                    final nextMode = ShotModePolicy.normalizeVisibleMode(mode);
                     setState(() {
-                      _shotMode = mode;
-                      if (mode == ShotMode.selfie) {
+                      _shotMode = nextMode;
+                      _autoCaptureController.reset();
+                      if (!ShotModePolicy.canAutoCapture(nextMode)) {
                         _autoCaptureEnabled = false;
                         _status = 'Selfie face mode';
                       }
                     });
-                    unawaited(_applyAnalysisModeForShotMode(mode));
-                    unawaited(_saveSetting('shotMode', mode.name));
+                    unawaited(_applyAnalysisModeForShotMode(nextMode));
+                    unawaited(_saveSetting('shotMode', nextMode.name));
                   },
                   onMediaModeChanged: _setMediaMode,
                   onToolSelected: _toggleToolPanel,
@@ -383,31 +420,31 @@ class _CameraScreenState extends State<CameraScreen>
               ],
             ),
             _TopFloatingMenus(
-              flashMenuOpen: _flashMenuOpen,
-              aspectMenuOpen: _aspectMenuOpen,
+              flashMenuOpen: _ui.flashMenuOpen,
+              aspectMenuOpen: _ui.aspectMenuOpen,
               settingsMenuOpen: false,
               aspectLabels: _aspectLabels,
               aspectLabel: _aspectLabel,
               flashMode: _flashMode,
-              showGuides: _showGuides,
-              showGrid: _showGrid,
-              showScore: _showScore,
+              showGuides: _ui.showGuides,
+              showGrid: _ui.showGrid,
+              showScore: _ui.showScore,
               onFlashSelected: _setFlash,
               onAspectSelected: (label) => setState(() {
                 _aspectLabel = label;
-                _aspectMenuOpen = false;
+                _ui.aspectMenuOpen = false;
                 unawaited(_saveSetting('aspectLabel', label));
               }),
               onToggleGuides: _toggleGuides,
               onToggleGrid: _toggleGrid,
               onToggleScore: _toggleScore,
             ),
-            if (_settingsMenuOpen)
+            if (_ui.settingsMenuOpen)
               _CameraSettingsOverlay(
-                showGuides: _showGuides,
-                showGrid: _showGrid,
-                showScore: _showScore,
-                showVisionDebug: _showVisionDebug,
+                showGuides: _ui.showGuides,
+                showGrid: _ui.showGrid,
+                showScore: _ui.showScore,
+                showVisionDebug: _ui.showVisionDebug,
                 captureTimer: _captureTimer,
                 exposure: _exposure,
                 minExposure: _minExposure,
@@ -445,7 +482,7 @@ class _CameraScreenState extends State<CameraScreen>
                 onManualIsoSelected: _setManualIso,
                 onManualShutterSelected: _setManualShutter,
                 onWhiteBalanceSelected: _setWhiteBalance,
-                onClose: () => setState(() => _settingsMenuOpen = false),
+                onClose: () => setState(() => _ui.settingsMenuOpen = false),
               ),
             if (_toolPanel != ToolPanel.none)
               _ToolSelectionOverlay(

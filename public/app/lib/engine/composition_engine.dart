@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import '../rules/composition_rules.dart';
 
 class SubjectEstimate {
@@ -180,20 +178,4 @@ String? _cameraPositionCue(SubjectEstimate estimate, CompositionRuleSet rules) {
 
 String _firstAdvice(CompositionRuleSet rules, String fallback) {
   return rules.captureAdvice.isNotEmpty ? rules.captureAdvice.first : fallback;
-}
-
-SubjectEstimate makePreviewEstimate(int tick) {
-  final drift = math.sin(tick / 1200);
-  final settle = 1 - math.min(tick / 9000, 1);
-
-  return SubjectEstimate(
-    bodyCenterX: 0.42 + 0.12 * drift * settle,
-    faceCenterY: 0.31 + 0.08 * math.cos(tick / 1500) * settle,
-    eyeLineY: 0.34 + 0.06 * math.sin(tick / 1700) * settle,
-    footLineY: 0.91 - 0.04 * math.cos(tick / 1300) * settle,
-    horizonTiltDeg: 5 * math.sin(tick / 1800) * settle,
-    limbsInsideFrame: tick % 7000 > 900,
-    subjectConfidence: 0.92,
-    poseConfidence: 0.86,
-  );
 }

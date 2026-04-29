@@ -10,13 +10,20 @@ extension _PhotoComposer on _CameraScreenState {
     final freshVision = _isVisionFrameFresh
         ? transformVisionForViewport(_visionResult, _previewAspectRatio())
         : null;
-    final estimate =
-        _estimateForShotMode(freshVision) ?? makePreviewEstimate(_tick);
-    final anchor = _FaceStickerAnchor.from(
+    final estimate = _composition
+        .evaluate(
+          mode: _shotMode,
+          liveEstimate: _estimateForShotMode(freshVision),
+          hasReliableEstimate: false,
+        )
+        .estimate;
+    final anchors = _FaceStickerAnchor.from(
       freshVision,
       estimate,
       Size(framed.width.toDouble(), framed.height.toDouble()),
+      _shotMode,
     );
+    final anchor = anchors.first;
     _PhotoEffectProcessor.apply(
       framed,
       style: _styleEffect,
@@ -26,7 +33,7 @@ extension _PhotoComposer on _CameraScreenState {
     );
 
     if (_stickerEffect != StickerEffect.none) {
-      _drawStickerOnPhoto(framed, _stickerEffect, anchor);
+      _drawStickerOnPhoto(framed, _stickerEffect, anchors);
     }
 
     final timestamp = _captureTimestamp();
@@ -79,29 +86,31 @@ extension _PhotoComposer on _CameraScreenState {
   void _drawStickerOnPhoto(
     img.Image photo,
     StickerEffect sticker,
-    _FaceStickerAnchor anchor,
+    List<_FaceStickerAnchor> anchors,
   ) {
-    switch (sticker) {
-      case StickerEffect.bunnyEars:
-        _RasterStickerArt.drawBunnyEars(
-          photo,
-          anchor.eyeCenter.translate(0, -anchor.faceWidth * 0.37),
-          anchor.faceWidth * 0.80,
-        );
-      case StickerEffect.sunglasses:
-        _RasterStickerArt.drawSunglasses(
-          photo,
-          anchor.eyeCenter,
-          anchor.faceWidth * 0.72,
-        );
-      case StickerEffect.pigNose:
-        _RasterStickerArt.drawPigNose(
-          photo,
-          anchor.noseCenter,
-          anchor.faceWidth * 0.62,
-        );
-      case StickerEffect.none:
-        break;
+    for (final anchor in anchors.take(3)) {
+      switch (sticker) {
+        case StickerEffect.bunnyEars:
+          _RasterStickerArt.drawBunnyEars(
+            photo,
+            anchor.eyeCenter.translate(0, -anchor.faceWidth * 0.37),
+            anchor.faceWidth * 0.80,
+          );
+        case StickerEffect.sunglasses:
+          _RasterStickerArt.drawSunglasses(
+            photo,
+            anchor.eyeCenter,
+            anchor.faceWidth * 0.72,
+          );
+        case StickerEffect.pigNose:
+          _RasterStickerArt.drawPigNose(
+            photo,
+            anchor.noseCenter,
+            anchor.faceWidth * 0.62,
+          );
+        case StickerEffect.none:
+          break;
+      }
     }
   }
 }
