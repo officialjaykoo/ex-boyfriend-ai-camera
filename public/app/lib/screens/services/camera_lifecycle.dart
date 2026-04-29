@@ -8,7 +8,7 @@ extension _CameraLifecycle on _CameraScreenState {
         .receiveBroadcastStream()
         .listen((_) {
           if (_isBusy) return;
-          if (_mediaMode == MediaMode.video) {
+          if (_ui.mediaMode == MediaMode.video) {
             _toggleVideo();
           } else {
             _capturePhoto();
@@ -42,8 +42,7 @@ extension _CameraLifecycle on _CameraScreenState {
     try {
       _deviceCapability = await _NativeCameraBridge.getDeviceCapability();
       if (!_deviceCapability.supported) {
-        _aiEnabled = false;
-        _aiBlockedReason = _deviceCapability.readableSummary;
+        _vision.blockAi(_deviceCapability.readableSummary);
         await _NativeCameraBridge.setAiEnabled(
           enabled: false,
           reason: _aiBlockedReason,
@@ -58,7 +57,7 @@ extension _CameraLifecycle on _CameraScreenState {
       _configureNativeSensors();
       _nativeTextureId = await _NativeCameraBridge.createPreviewTexture();
       await _NativeCameraBridge.setResolution(_resolutionPreset);
-      await _NativeCameraBridge.setCaptureMode(_mediaMode);
+      await _NativeCameraBridge.setCaptureMode(_ui.mediaMode);
       await _applyAnalysisModeForShotMode(_shotMode);
       await _NativeCameraBridge.setVideoOptions(
         fps: _videoFps,
@@ -71,7 +70,7 @@ extension _CameraLifecycle on _CameraScreenState {
       setState(() {
         _nativeCameraReady = true;
         _setSession(
-          _mediaMode == MediaMode.video
+          _ui.mediaMode == MediaMode.video
               ? _CameraSessionPhase.videoReady
               : _CameraSessionPhase.photoReady,
           message: 'CameraX ready',
@@ -81,7 +80,7 @@ extension _CameraLifecycle on _CameraScreenState {
         unawaited(_prepareAiAfterCameraStart());
       } else {
         _analysisSubscription?.cancel();
-        _visionResult = null;
+        _vision.clearResult();
         if (mounted) setState(() => _status = 'Camera only');
       }
     } catch (_) {
@@ -97,16 +96,12 @@ extension _CameraLifecycle on _CameraScreenState {
     try {
       final cachedBenchmark = await _restoreAiBenchmark();
       if (cachedBenchmark != null) {
-        _aiBenchmark = cachedBenchmark;
+        _vision.applyBenchmark(cachedBenchmark);
       } else {
         if (mounted) setState(() => _status = 'AI benchmark');
-        _aiBenchmark = await _NativeCameraBridge.runAiBenchmark();
+        _vision.applyBenchmark(await _NativeCameraBridge.runAiBenchmark());
         unawaited(_saveAiBenchmark(_aiBenchmark));
       }
-      _aiEnabled = _aiBenchmark.aiEnabled;
-      _aiBlockedReason = _aiBenchmark.aiEnabled
-          ? ''
-          : _aiBenchmark.readableSummary;
       await _NativeCameraBridge.setAiEnabled(
         enabled: _aiBenchmark.aiEnabled,
         reason: _aiBenchmark.blockedReason,
@@ -119,13 +114,12 @@ extension _CameraLifecycle on _CameraScreenState {
         if (mounted) setState(() => _status = 'AI connected');
       } else {
         _analysisSubscription?.cancel();
-        _visionResult = null;
+        _vision.clearResult();
         if (mounted) setState(() => _status = 'Camera only');
       }
       await _refreshNativeState();
     } catch (_) {
-      _aiEnabled = false;
-      _aiBlockedReason = 'AI start failed';
+      _vision.blockAi('AI start failed');
       await _NativeCameraBridge.setAiEnabled(
         enabled: false,
         reason: _aiBlockedReason,
@@ -135,59 +129,13 @@ extension _CameraLifecycle on _CameraScreenState {
   }
 
   Future<_AiBenchmarkResult?> _restoreAiBenchmark() async {
-    final prefs = await SharedPreferences.getInstance();
-    final version = prefs.getInt(
-      '${_CameraScreenState._settingsPrefix}aiBenchmarkVersion',
-    );
-    if (version != 1) return null;
-    final bestDelegate = prefs.getString(
-      '${_CameraScreenState._settingsPrefix}aiBestDelegate',
-    );
-    if (bestDelegate == null || bestDelegate.isEmpty) return null;
-    return _AiBenchmarkResult(
-      aiEnabled:
-          prefs.getBool('${_CameraScreenState._settingsPrefix}aiEnabled') ??
-          false,
-      bestDelegate: bestDelegate,
-      averageMs:
-          prefs.getInt('${_CameraScreenState._settingsPrefix}aiAverageMs') ?? 0,
-      grade:
-          prefs.getString('${_CameraScreenState._settingsPrefix}aiGrade') ??
-          'unknown',
-      blockedReason:
-          prefs.getString(
-            '${_CameraScreenState._settingsPrefix}aiBlockedReason',
-          ) ??
-          '',
-      results: const [],
-    );
+    return _vision.restoreBenchmark(prefix: _CameraScreenState._settingsPrefix);
   }
 
   Future<void> _saveAiBenchmark(_AiBenchmarkResult result) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(
-      '${_CameraScreenState._settingsPrefix}aiBenchmarkVersion',
-      1,
-    );
-    await prefs.setBool(
-      '${_CameraScreenState._settingsPrefix}aiEnabled',
-      result.aiEnabled,
-    );
-    await prefs.setString(
-      '${_CameraScreenState._settingsPrefix}aiBestDelegate',
-      result.bestDelegate,
-    );
-    await prefs.setInt(
-      '${_CameraScreenState._settingsPrefix}aiAverageMs',
-      result.averageMs,
-    );
-    await prefs.setString(
-      '${_CameraScreenState._settingsPrefix}aiGrade',
-      result.grade,
-    );
-    await prefs.setString(
-      '${_CameraScreenState._settingsPrefix}aiBlockedReason',
-      result.blockedReason,
+    await _vision.saveBenchmark(
+      prefix: _CameraScreenState._settingsPrefix,
+      result: result,
     );
   }
 
@@ -197,7 +145,7 @@ extension _CameraLifecycle on _CameraScreenState {
         .receiveBroadcastStream()
         .listen((event) async {
           if (!mounted || _isCameraSuspended || _isBusy) return;
-          if (!_analysisPipeline.shouldAnalyze(DateTime.now())) return;
+          if (!_vision.shouldAnalyzeNow()) return;
           try {
             final VisionFrameResult result;
             if (event is Map<dynamic, dynamic>) {
@@ -212,9 +160,7 @@ extension _CameraLifecycle on _CameraScreenState {
             }
             if (!mounted || _isCameraSuspended) return;
             setState(() {
-              _analysisFramesReceived += 1;
-              _lastAnalysisFrameAt = DateTime.now();
-              _visionResult = result;
+              _vision.acceptAnalysisResult(result);
               if (_status == 'CameraX ready' || _status == 'AI ready') {
                 _status = 'AI connected';
               }
@@ -222,7 +168,7 @@ extension _CameraLifecycle on _CameraScreenState {
           } catch (_) {
             if (mounted) setState(() => _status = 'AI analyze error');
           } finally {
-            _analysisPipeline.complete();
+            _vision.completeAnalysis();
           }
         });
   }
@@ -269,7 +215,7 @@ extension _CameraLifecycle on _CameraScreenState {
     _setSession(_CameraSessionPhase.suspended, message: 'Camera paused');
     _recordingStartedAt = null;
     _ui.clearTransientOverlays();
-    _analysisPipeline.reset();
+    _vision.resetPipeline();
     _analysisSubscription?.pause();
     await _NativeCameraBridge.stop();
     _nativeCameraReady = false;
@@ -300,7 +246,7 @@ extension _CameraLifecycle on _CameraScreenState {
     }
     _analysisSubscription?.resume();
     await _NativeCameraBridge.setResolution(_resolutionPreset);
-    await _NativeCameraBridge.setCaptureMode(_mediaMode);
+    await _NativeCameraBridge.setCaptureMode(_ui.mediaMode);
     await _applyAnalysisModeForShotMode(_shotMode);
     await _NativeCameraBridge.setVideoOptions(
       fps: _videoFps,
@@ -313,7 +259,7 @@ extension _CameraLifecycle on _CameraScreenState {
     setState(() {
       _nativeCameraReady = true;
       _setSession(
-        _mediaMode == MediaMode.video
+        _ui.mediaMode == MediaMode.video
             ? _CameraSessionPhase.videoReady
             : _CameraSessionPhase.photoReady,
         message: 'CameraX ready',

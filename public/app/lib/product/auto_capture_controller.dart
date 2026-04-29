@@ -29,6 +29,7 @@ class AutoCaptureController {
     required bool isPhotoMode,
     required bool isBusy,
     required bool isCameraSuspended,
+    required bool hasFreshAnalysis,
     required bool hasReliableSubject,
     required bool compositionReady,
     required bool eyesOpen,
@@ -41,7 +42,8 @@ class AutoCaptureController {
         !canAutoCaptureMode ||
         !isPhotoMode ||
         isBusy ||
-        isCameraSuspended) {
+        isCameraSuspended ||
+        !hasFreshAnalysis) {
       reset();
       return AutoCaptureDecision.wait;
     }

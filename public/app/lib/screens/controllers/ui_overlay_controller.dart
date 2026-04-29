@@ -1,6 +1,12 @@
 part of 'package:exbf_camera/screens/camera_screen.dart';
 
 class _UiOverlayController {
+  ToolPanel toolPanel = ToolPanel.none;
+  StickerEffect stickerEffect = StickerEffect.none;
+  StyleEffect styleEffect = StyleEffect.none;
+  SetEffect setEffect = SetEffect.none;
+  RetouchEffect retouchEffect = RetouchEffect.none;
+  MediaMode mediaMode = MediaMode.photo;
   bool showGrid = false;
   bool showGuides = true;
   bool showScore = true;
@@ -28,6 +34,14 @@ class _UiOverlayController {
   void clearTransientOverlays() {
     focusPoint = null;
     showExposureGesture = false;
+  }
+
+  void closeToolPanel() {
+    toolPanel = ToolPanel.none;
+  }
+
+  void toggleToolPanel(ToolPanel panel) {
+    toolPanel = toolPanel == panel ? ToolPanel.none : panel;
   }
 
   void showThumbnail(String path, {required bool isVideo}) {

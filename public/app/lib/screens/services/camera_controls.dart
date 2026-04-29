@@ -47,7 +47,7 @@ extension _CameraControls on _CameraScreenState {
       if (mounted) {
         setState(
           () => _setSession(
-            _mediaMode == MediaMode.video
+            _ui.mediaMode == MediaMode.video
                 ? _CameraSessionPhase.videoReady
                 : _CameraSessionPhase.photoReady,
             message: 'CameraX ready',
@@ -177,28 +177,28 @@ extension _CameraControls on _CameraScreenState {
   void _toggleAutoCapture() {
     if (!ShotModePolicy.canAutoCapture(_shotMode)) {
       setState(() {
-        _autoCaptureController.reset();
+        _autoCapture.reset();
         _autoCaptureEnabled = false;
         _status = 'Selfie uses face guide';
       });
       return;
     }
     setState(() {
-      _autoCaptureController.reset();
+      _autoCapture.reset();
       _autoCaptureEnabled = !_autoCaptureEnabled;
       _status = _autoCaptureEnabled ? 'AUTO ON' : 'AUTO OFF';
     });
   }
 
   Future<void> _setMediaMode(MediaMode mode) async {
-    if (_mediaMode == mode ||
+    if (_ui.mediaMode == mode ||
         _isBusy ||
         _isCameraSuspended ||
         _isCameraOperationInFlight) {
       return;
     }
     setState(() {
-      _mediaMode = mode;
+      _ui.mediaMode = mode;
       _status = 'Camera loading';
       if (mode == MediaMode.video) {
         _visionResult = null;
@@ -225,16 +225,6 @@ extension _CameraControls on _CameraScreenState {
         );
       });
     });
-  }
-
-  SubjectEstimate? _estimateForShotMode(VisionFrameResult? result) {
-    if (_shotMode == ShotMode.selfie) {
-      return estimateSelfieFaceFromVision(result);
-    }
-    if (_shotMode == ShotMode.stillLife || _shotMode == ShotMode.object) {
-      return estimateObjectFromVision(result);
-    }
-    return estimateSubjectFromVision(result);
   }
 
   Future<void> _applyAnalysisModeForShotMode(ShotMode mode) async {
@@ -371,7 +361,7 @@ extension _CameraControls on _CameraScreenState {
 
   void _toggleTopMenu(String menu) {
     setState(() {
-      _toolPanel = ToolPanel.none;
+      _ui.closeToolPanel();
       _ui.toggleTopMenu(menu);
     });
   }
@@ -379,7 +369,7 @@ extension _CameraControls on _CameraScreenState {
   void _toggleToolPanel(ToolPanel panel) {
     setState(() {
       _ui.closeMenus();
-      _toolPanel = _toolPanel == panel ? ToolPanel.none : panel;
+      _ui.toggleToolPanel(panel);
     });
   }
 

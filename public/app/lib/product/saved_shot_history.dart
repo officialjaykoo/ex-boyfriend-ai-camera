@@ -13,6 +13,14 @@ class SavedShotRecord {
     required this.compositionScore,
     required this.compositionCue,
     required this.hadReliableEstimate,
+    this.bodyCenterX,
+    this.faceCenterY,
+    this.eyeLineY,
+    this.footLineY,
+    this.horizonTiltDeg,
+    this.subjectConfidence,
+    this.poseConfidence,
+    this.autoCaptured = false,
     this.liked,
   });
 
@@ -23,6 +31,14 @@ class SavedShotRecord {
   final int? compositionScore;
   final String compositionCue;
   final bool hadReliableEstimate;
+  final double? bodyCenterX;
+  final double? faceCenterY;
+  final double? eyeLineY;
+  final double? footLineY;
+  final double? horizonTiltDeg;
+  final double? subjectConfidence;
+  final double? poseConfidence;
+  final bool autoCaptured;
   final bool? liked;
 
   SavedShotRecord copyWith({bool? liked}) {
@@ -34,6 +50,14 @@ class SavedShotRecord {
       compositionScore: compositionScore,
       compositionCue: compositionCue,
       hadReliableEstimate: hadReliableEstimate,
+      bodyCenterX: bodyCenterX,
+      faceCenterY: faceCenterY,
+      eyeLineY: eyeLineY,
+      footLineY: footLineY,
+      horizonTiltDeg: horizonTiltDeg,
+      subjectConfidence: subjectConfidence,
+      poseConfidence: poseConfidence,
+      autoCaptured: autoCaptured,
       liked: liked ?? this.liked,
     );
   }
@@ -47,6 +71,14 @@ class SavedShotRecord {
       'compositionScore': compositionScore,
       'compositionCue': compositionCue,
       'hadReliableEstimate': hadReliableEstimate,
+      'bodyCenterX': bodyCenterX,
+      'faceCenterY': faceCenterY,
+      'eyeLineY': eyeLineY,
+      'footLineY': footLineY,
+      'horizonTiltDeg': horizonTiltDeg,
+      'subjectConfidence': subjectConfidence,
+      'poseConfidence': poseConfidence,
+      'autoCaptured': autoCaptured,
       'liked': liked,
     };
   }
@@ -80,6 +112,14 @@ class SavedShotRecord {
       compositionScore: (json['compositionScore'] as num?)?.toInt(),
       compositionCue: json['compositionCue'] as String? ?? '',
       hadReliableEstimate: json['hadReliableEstimate'] == true,
+      bodyCenterX: (json['bodyCenterX'] as num?)?.toDouble(),
+      faceCenterY: (json['faceCenterY'] as num?)?.toDouble(),
+      eyeLineY: (json['eyeLineY'] as num?)?.toDouble(),
+      footLineY: (json['footLineY'] as num?)?.toDouble(),
+      horizonTiltDeg: (json['horizonTiltDeg'] as num?)?.toDouble(),
+      subjectConfidence: (json['subjectConfidence'] as num?)?.toDouble(),
+      poseConfidence: (json['poseConfidence'] as num?)?.toDouble(),
+      autoCaptured: json['autoCaptured'] == true,
       liked: json['liked'] as bool?,
     );
   }

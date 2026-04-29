@@ -4,7 +4,13 @@ part of 'package:exbf_camera/screens/camera_screen.dart';
 
 extension _CaptureActions on _CameraScreenState {
   Future<void> _capturePhoto() async {
-    if (_isCameraSuspended || _isBusy || _isCameraOperationInFlight) return;
+    if (!_capture.canStartCapture(
+      isBusy: _isBusy,
+      isCameraSuspended: _isCameraSuspended,
+      isCameraOperationInFlight: _isCameraOperationInFlight,
+    )) {
+      return;
+    }
     if (_captureTimer != Duration.zero && _countdownSeconds == null) {
       for (var seconds = _captureTimer.inSeconds; seconds > 0; seconds--) {
         if (!mounted) return;
@@ -19,15 +25,21 @@ extension _CaptureActions on _CameraScreenState {
     await _capturePhotoNow();
   }
 
-  Future<void> _capturePhotoNow() async {
-    if (_isBusy || _isCameraSuspended || !_nativeCameraReady) return;
+  Future<void> _capturePhotoNow({bool autoCaptured = false}) async {
+    if (!_capture.canTakePhotoNow(
+      isBusy: _isBusy,
+      isCameraSuspended: _isCameraSuspended,
+      nativeCameraReady: _nativeCameraReady,
+    )) {
+      return;
+    }
     await _runCameraOperation(() async {
       if (!mounted || _isCameraSuspended || !_nativeCameraReady) return;
       setState(
         () => _setSession(_CameraSessionPhase.capturing, message: 'Saving'),
       );
       try {
-        _lastShotAt = DateTime.now();
+        _capture.markShotStarted();
         final captureComposition = _currentCompositionSession();
         final capturedPath = await _NativeCameraBridge.takePhoto();
         if (capturedPath == null || capturedPath.isEmpty) {
@@ -35,7 +47,14 @@ extension _CaptureActions on _CameraScreenState {
         }
         final savedPath = await _composeEditedPhoto(capturedPath);
         final galleryPath = await _capturePipeline.saveImage(savedPath);
-        unawaited(_recordSavedShot(galleryPath, captureComposition));
+        unawaited(
+          _capture.recordSavedShot(
+            path: galleryPath,
+            shotMode: _shotMode,
+            composition: captureComposition,
+            autoCaptured: autoCaptured,
+          ),
+        );
         _showTemporaryThumbnail(galleryPath);
         setState(
           () => _setSession(_CameraSessionPhase.photoReady, message: 'Saved'),
@@ -53,7 +72,7 @@ extension _CaptureActions on _CameraScreenState {
         if (mounted && !_session.isSuspended) {
           setState(
             () => _setSession(
-              _mediaMode == MediaMode.video
+              _ui.mediaMode == MediaMode.video
                   ? _CameraSessionPhase.videoReady
                   : _CameraSessionPhase.photoReady,
             ),
@@ -71,12 +90,12 @@ extension _CaptureActions on _CameraScreenState {
         if (!mounted) return;
         setState(() {
           if (state == 'recording') {
-            _recordingStartedAt = DateTime.now();
+            _capture.markRecordingStarted();
             _startRecordingSafetyTimer();
             _setSession(_CameraSessionPhase.recording, message: 'Recording');
           } else {
             _stopRecordingSafetyTimer();
-            _recordingStartedAt = null;
+            _capture.markRecordingStopped();
             _setSession(
               _CameraSessionPhase.videoReady,
               message: 'Saving video',
@@ -107,7 +126,7 @@ extension _CaptureActions on _CameraScreenState {
         if (!mounted) return;
         _stopRecordingSafetyTimer();
         setState(() {
-          _recordingStartedAt = null;
+          _capture.markRecordingStopped();
           _setSession(_CameraSessionPhase.videoReady, message: 'Video error');
         });
       }
@@ -165,59 +184,29 @@ extension _CaptureActions on _CameraScreenState {
       _previewAspectRatio(),
     );
     final composition = _currentCompositionSession();
-    final decision = _autoCaptureController.evaluate(
+    final decision = _autoCapture.tick(
       now: now,
       enabled: _autoCaptureEnabled,
       aiEnabled: _aiEnabled,
-      canAutoCaptureMode: ShotModePolicy.canAutoCapture(_shotMode),
-      isPhotoMode: _mediaMode == MediaMode.photo,
+      shotMode: _shotMode,
+      mediaMode: _ui.mediaMode,
       isBusy: _isBusy,
       isCameraSuspended: _isCameraSuspended,
-      hasReliableSubject: composition.hasReliableEstimate,
-      compositionReady: composition.ready,
-      eyesOpen: _eyesOpenForAutoCapture(viewportVisionResult),
-      subjectX: composition.estimate.bodyCenterX,
-      subjectY: composition.estimate.faceCenterY,
+      composition: composition,
+      viewportVisionResult: viewportVisionResult,
+      lastAnalysisFrameAt: _lastAnalysisFrameAt,
       lastShotAt: _lastShotAt,
     );
     if (decision != AutoCaptureDecision.capture) return;
-    _capturePhotoNow();
+    _capturePhotoNow(autoCaptured: true);
   }
 
   CompositionSession _currentCompositionSession() {
-    final estimate = _estimateForShotMode(
-      transformVisionForViewport(_visionResult, _previewAspectRatio()),
-    );
-    return _composition.evaluate(
+    return _composition.currentSession(
       mode: _shotMode,
-      liveEstimate: estimate,
-      hasReliableEstimate: _analysisPipeline.isReliable(estimate),
-    );
-  }
-
-  bool _eyesOpenForAutoCapture(VisionFrameResult? result) {
-    final facesWithEyeState = (result?.faces ?? const <DetectedFace>[])
-        .where((face) => face.hasEyeOpenProbabilities)
-        .toList(growable: false);
-    if (facesWithEyeState.isEmpty) return true;
-    return facesWithEyeState.every((face) => face.eyesLikelyOpen);
-  }
-
-  Future<void> _recordSavedShot(
-    String path,
-    CompositionSession composition,
-  ) async {
-    final capturedAt = _lastShotAt ?? DateTime.now();
-    await _shotHistoryStore.add(
-      SavedShotRecord(
-        id: '${capturedAt.microsecondsSinceEpoch}_${_shotMode.name}',
-        path: path,
-        shotMode: _shotMode,
-        capturedAt: capturedAt,
-        compositionScore: composition.result?.score,
-        compositionCue: composition.cue,
-        hadReliableEstimate: composition.hasReliableEstimate,
-      ),
+      visionResult: _visionResult,
+      previewAspectRatio: _previewAspectRatio(),
+      analysisPipeline: _analysisPipeline,
     );
   }
 

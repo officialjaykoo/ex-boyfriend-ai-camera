@@ -13,6 +13,7 @@ import '../engine/composition_engine.dart';
 import '../engine/vision_composition_adapter.dart';
 import '../models/camera_modes.dart';
 import '../product/auto_capture_controller.dart';
+import '../product/auto_capture_use_case.dart';
 import '../product/composition_session.dart';
 import '../product/saved_shot_history.dart';
 import '../product/shot_mode_policy.dart';
@@ -36,6 +37,7 @@ part 'controllers/vision_controller.dart';
 part 'controllers/camera_session_controller.dart';
 part 'controllers/capture_controller.dart';
 part 'controllers/composition_controller.dart';
+part 'controllers/auto_capture_coordinator.dart';
 part 'services/camera_controls.dart';
 part 'services/camera_lifecycle.dart';
 part 'services/native_camera_bridge.dart';
@@ -68,15 +70,10 @@ class _CameraScreenState extends State<CameraScreen>
 
   String _status = 'Camera ready';
   ShotMode _shotMode = ShotMode.portrait;
-  ToolPanel _toolPanel = ToolPanel.none;
-  StickerEffect _stickerEffect = StickerEffect.none;
-  StyleEffect _styleEffect = StyleEffect.none;
-  SetEffect _setEffect = SetEffect.none;
-  RetouchEffect _retouchEffect = RetouchEffect.none;
-  MediaMode _mediaMode = MediaMode.photo;
   final _CompositionController _composition = _CompositionController();
   FlashMode _flashMode = FlashMode.off;
   bool _autoCaptureEnabled = false;
+  final _AutoCaptureCoordinator _autoCapture = _AutoCaptureCoordinator();
   final _UiOverlayController _ui = _UiOverlayController();
   final _CameraSessionController _cameraSession = _CameraSessionController();
   bool get _isRecording => _cameraSession.isRecording;
@@ -123,7 +120,6 @@ class _CameraScreenState extends State<CameraScreen>
   String get _manualWhiteBalance => _settings.manualWhiteBalance;
   set _manualWhiteBalance(String value) => _settings.manualWhiteBalance = value;
   DateTime? get _lastShotAt => _capture.lastShotAt;
-  set _lastShotAt(DateTime? value) => _capture.lastShotAt = value;
   DateTime? get _recordingStartedAt => _capture.recordingStartedAt;
   set _recordingStartedAt(DateTime? value) =>
       _capture.recordingStartedAt = value;
@@ -137,19 +133,14 @@ class _CameraScreenState extends State<CameraScreen>
   final _VisionController _vision = _VisionController();
   _AnalysisPipeline get _analysisPipeline => _vision.analysisPipeline;
   VisionEngine get _visionEngine => _vision.engine;
-  final AutoCaptureController _autoCaptureController = AutoCaptureController();
-  final SavedShotHistoryStore _shotHistoryStore = const SavedShotHistoryStore();
   VisionFrameResult? get _visionResult => _vision.result;
   set _visionResult(VisionFrameResult? value) => _vision.result = value;
   _DeviceCapability get _deviceCapability => _vision.deviceCapability;
   set _deviceCapability(_DeviceCapability value) =>
       _vision.deviceCapability = value;
   _AiBenchmarkResult get _aiBenchmark => _vision.aiBenchmark;
-  set _aiBenchmark(_AiBenchmarkResult value) => _vision.aiBenchmark = value;
   bool get _aiEnabled => _vision.aiEnabled;
-  set _aiEnabled(bool value) => _vision.aiEnabled = value;
   String get _aiBlockedReason => _vision.aiBlockedReason;
-  set _aiBlockedReason(String value) => _vision.aiBlockedReason = value;
   List<_NativeCameraSensor> get _nativeSensors => _cameraSession.nativeSensors;
   set _nativeSensors(List<_NativeCameraSensor> value) =>
       _cameraSession.nativeSensors = value;
@@ -171,8 +162,6 @@ class _CameraScreenState extends State<CameraScreen>
   set _nativeSelectedSensorId(String? value) =>
       _cameraSession.nativeSelectedSensorId = value;
   int get _analysisFramesReceived => _vision.analysisFramesReceived;
-  set _analysisFramesReceived(int value) =>
-      _vision.analysisFramesReceived = value;
   DateTime? get _lastAnalysisFrameAt => _vision.lastAnalysisFrameAt;
   set _lastAnalysisFrameAt(DateTime? value) =>
       _vision.lastAnalysisFrameAt = value;
@@ -239,15 +228,15 @@ class _CameraScreenState extends State<CameraScreen>
   @override
   Widget build(BuildContext context) {
     final rules = _composition.rulesFor(_shotMode);
-    final viewportVisionResult = transformVisionForViewport(
-      _visionResult,
-      _previewAspectRatio(),
+    final viewportVisionResult = _composition.viewportVisionResult(
+      result: _visionResult,
+      previewAspectRatio: _previewAspectRatio(),
     );
-    final liveEstimate = _estimateForShotMode(viewportVisionResult);
-    final composition = _composition.evaluate(
+    final composition = _composition.currentSession(
       mode: _shotMode,
-      liveEstimate: liveEstimate,
-      hasReliableEstimate: _analysisPipeline.isReliable(liveEstimate),
+      visionResult: _visionResult,
+      previewAspectRatio: _previewAspectRatio(),
+      analysisPipeline: _analysisPipeline,
     );
 
     return Scaffold(
@@ -307,18 +296,18 @@ class _CameraScreenState extends State<CameraScreen>
                                     if (_nativeTextureId != null)
                                       _FilteredCameraPreview(
                                         textureId: _nativeTextureId!,
-                                        style: _styleEffect,
-                                        set: _setEffect,
-                                        retouch: _retouchEffect,
+                                        style: _ui.styleEffect,
+                                        set: _ui.setEffect,
+                                        retouch: _ui.retouchEffect,
                                       ),
                                     _EffectPreviewOverlay(
-                                      style: _styleEffect,
-                                      set: _setEffect,
-                                      retouch: _retouchEffect,
+                                      style: _ui.styleEffect,
+                                      set: _ui.setEffect,
+                                      retouch: _ui.retouchEffect,
                                     ),
-                                    if (_stickerEffect != StickerEffect.none)
+                                    if (_ui.stickerEffect != StickerEffect.none)
                                       _StickerOverlay(
-                                        sticker: _stickerEffect,
+                                        sticker: _ui.stickerEffect,
                                         mode: _shotMode,
                                         visionResult: viewportVisionResult,
                                         estimate: composition.estimate,
@@ -393,15 +382,15 @@ class _CameraScreenState extends State<CameraScreen>
                 ),
                 _BottomControls(
                   shotMode: _shotMode,
-                  mediaMode: _mediaMode,
-                  toolPanel: _toolPanel,
+                  mediaMode: _ui.mediaMode,
+                  toolPanel: _ui.toolPanel,
                   isRecording: _isRecording,
                   isBusy: _isBusy,
                   onShotModeChanged: (mode) {
                     final nextMode = ShotModePolicy.normalizeVisibleMode(mode);
                     setState(() {
                       _shotMode = nextMode;
-                      _autoCaptureController.reset();
+                      _autoCapture.reset();
                       if (!ShotModePolicy.canAutoCapture(nextMode)) {
                         _autoCaptureEnabled = false;
                         _status = 'Selfie face mode';
@@ -413,7 +402,7 @@ class _CameraScreenState extends State<CameraScreen>
                   onMediaModeChanged: _setMediaMode,
                   onToolSelected: _toggleToolPanel,
                   onGalleryTap: _openGallery,
-                  onShutterTap: _mediaMode == MediaMode.video
+                  onShutterTap: _ui.mediaMode == MediaMode.video
                       ? _toggleVideo
                       : _capturePhoto,
                 ),
@@ -484,22 +473,22 @@ class _CameraScreenState extends State<CameraScreen>
                 onWhiteBalanceSelected: _setWhiteBalance,
                 onClose: () => setState(() => _ui.settingsMenuOpen = false),
               ),
-            if (_toolPanel != ToolPanel.none)
+            if (_ui.toolPanel != ToolPanel.none)
               _ToolSelectionOverlay(
-                panel: _toolPanel,
-                options: _toolOptions[_toolPanel]!,
-                selectedSticker: _stickerEffect,
-                selectedStyle: _styleEffect,
-                selectedSet: _setEffect,
-                selectedRetouch: _retouchEffect,
+                panel: _ui.toolPanel,
+                options: _toolOptions[_ui.toolPanel]!,
+                selectedSticker: _ui.stickerEffect,
+                selectedStyle: _ui.styleEffect,
+                selectedSet: _ui.setEffect,
+                selectedRetouch: _ui.retouchEffect,
                 onStickerSelected: (sticker) =>
-                    setState(() => _stickerEffect = sticker),
+                    setState(() => _ui.stickerEffect = sticker),
                 onStyleSelected: (style) =>
-                    setState(() => _styleEffect = style),
-                onSetSelected: (set) => setState(() => _setEffect = set),
+                    setState(() => _ui.styleEffect = style),
+                onSetSelected: (set) => setState(() => _ui.setEffect = set),
                 onRetouchSelected: (retouch) =>
-                    setState(() => _retouchEffect = retouch),
-                onClose: () => setState(() => _toolPanel = ToolPanel.none),
+                    setState(() => _ui.retouchEffect = retouch),
+                onClose: () => setState(() => _ui.toolPanel = ToolPanel.none),
               ),
           ],
         ),

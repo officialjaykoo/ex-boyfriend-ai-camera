@@ -24,6 +24,17 @@ void main() {
     expect(result.score, greaterThanOrEqualTo(rules.autoCaptureThreshold));
   });
 
+  test('portrait guide uses measured solo portrait anchors', () {
+    final rules = compositionRules[ShotMode.portrait]!;
+
+    expect(rules.bodyCenterX, 0.50);
+    expect(rules.eyeLineY, lessThan(rules.faceCenterY));
+    expect(rules.eyeLineY, closeTo(0.31, 0.001));
+    expect(rules.faceCenterY, closeTo(0.36, 0.001));
+    expect(rules.footLineY, closeTo(0.90, 0.001));
+    expect(rules.autoCaptureThreshold, 87);
+  });
+
   test(
     'people cue tells user to move the camera when subject is off frame',
     () {

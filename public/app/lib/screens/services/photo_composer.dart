@@ -13,7 +13,10 @@ extension _PhotoComposer on _CameraScreenState {
     final estimate = _composition
         .evaluate(
           mode: _shotMode,
-          liveEstimate: _estimateForShotMode(freshVision),
+          liveEstimate: _composition.estimateForMode(
+            mode: _shotMode,
+            viewportVisionResult: freshVision,
+          ),
           hasReliableEstimate: false,
         )
         .estimate;
@@ -26,14 +29,14 @@ extension _PhotoComposer on _CameraScreenState {
     final anchor = anchors.first;
     _PhotoEffectProcessor.apply(
       framed,
-      style: _styleEffect,
-      set: _setEffect,
-      retouch: _retouchEffect,
+      style: _ui.styleEffect,
+      set: _ui.setEffect,
+      retouch: _ui.retouchEffect,
       anchor: anchor,
     );
 
-    if (_stickerEffect != StickerEffect.none) {
-      _drawStickerOnPhoto(framed, _stickerEffect, anchors);
+    if (_ui.stickerEffect != StickerEffect.none) {
+      _drawStickerOnPhoto(framed, _ui.stickerEffect, anchors);
     }
 
     final timestamp = _captureTimestamp();
@@ -71,9 +74,7 @@ extension _PhotoComposer on _CameraScreenState {
   }
 
   bool get _isVisionFrameFresh {
-    final lastFrameAt = _lastAnalysisFrameAt;
-    return lastFrameAt != null &&
-        DateTime.now().difference(lastFrameAt) < const Duration(seconds: 4);
+    return _vision.isAnalysisFresh();
   }
 
   String _captureTimestamp() {
